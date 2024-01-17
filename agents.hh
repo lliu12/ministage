@@ -42,9 +42,6 @@ class Agent {
     //// Determine whether robot is blocked and update info about blockedness, closest neighbor, periodicity updates, etc.
     virtual void sensing_update();
 
-    //// Update robot speed and turning angle
-    virtual void motion_update();
-
     //// Update robot position
     virtual void position_update();
 

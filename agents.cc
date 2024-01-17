@@ -64,16 +64,11 @@ void Agent::goal_updates() {
     goal_birth_time = sd->sim_time;
 }
 
-//// Updates made each step for values other than robot speed and direction
-//// Determine whether robot is blocked and update info about blockedness, closest neighbor, periodicity updates, etc.
+//// Use sensor information to update motion (turning and forward speed)
 void Agent::sensing_update() {
-
+    std::vector <sensor_result> sensed = sd->sense(id, *cur_pos, sp.sensing_range, sp.sensing_angle);
 }
 
-//// Update robot speed and turning angle
-void Agent::motion_update() {
-
-}
 
 //// Update robot position
 void Agent::position_update() {

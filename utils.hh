@@ -142,6 +142,30 @@ class Pose {
     meters_t Distance(const Pose &other) const { return hypot(x - other.x, y - other.y); }
 };
 
+typedef struct {
+    int id; // id of sensed neighbor
+    meters_t dist_away;
+} sensor_result;
+
+typedef struct {
+    bool in_cone;
+    meters_t dist_away;
+} cone_result;
+
+// need to be strictly within the sensing range
+inline cone_result in_vision_cone(Pose agent_pos, Pose nbr_pos, meters_t my_sensor_range, radians_t my_sensor_angle) {
+    cone_result result;
+    
+    double dx = nbr_pos.x - agent_pos.x;
+    double dy = nbr_pos.y - agent_pos.y;
+    radians_t gamma = atan2(dy, dx); // angle between nbr_pos - agent_pos and x-axis
+    radians_t angle_away_from_centerline = fabs(gamma - agent_pos.a);
+
+    result.dist_away = hypot(dy, dx); 
+    result.in_cone = (result.dist_away < my_sensor_range) && (angle_away_from_centerline < my_sensor_angle / 2.0);
+
+    return result;
+}
 
 /// Simulation Data Class
 class SimulationData {
@@ -156,6 +180,7 @@ class SimulationData {
 
 
         void reset();
+        std::vector <sensor_result> sense(int agent_id, Pose agent_pos, meters_t sensing_range, radians_t sensing_angle);
 
 };
 

@@ -65,6 +65,21 @@ int main(int argc, char* argv[])
         IS_TRUE(*sim.agents[i]->cur_pos == *sim.sd.positions[i]); // simdata and agent pose values match
     }
 
+    std::cout << "Checking in_vision_cone function..." << std::endl;
+    {
+        Pose p = Pose(0,0,0,0);
+        Pose q = Pose(5.1, 0, 0, 0);
+        cone_result cr = in_vision_cone(p, q, 5, M_PI);
+        // std::cout << cr.dist_away << std::endl;
+        IS_TRUE(cr.dist_away == p.Distance(q));
+        IS_TRUE(!cr.in_cone);
+        IS_TRUE(!in_vision_cone(p,q,5.1, M_PI).in_cone);
+        IS_TRUE(in_vision_cone(p,q,5.2, M_PI).in_cone);
+        IS_TRUE(!in_vision_cone(p,q,5.2, 0).in_cone);
+
+    }
+
+
     return 0;
 }
 
