@@ -15,8 +15,10 @@ class Agent {
     // todo: update *cur_pos to be a smart pointer
     Pose start_pos;
     Pose goal_pos;
-    meters_t sensing_range;
-    radians_t sensing_angle;
+    radians_t travel_angle;
+
+    double fwd_speed; // meters per second
+    double turn_speed; // radians per second
 
     int goals_reached;
     uint64_t goal_birth_time;
@@ -47,6 +49,10 @@ class Agent {
 
     //// Get (global) angle robot should move in to head straight to goal
     double angle_to_goal();
+
+    /// Update current position
+    void set_pos(Pose p);
+
 
     // Constructor
     Agent(int agent_id, sim_params sim_params, SimulationData *sim_data, Pose *cur_pos_ptr);

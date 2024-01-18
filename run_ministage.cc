@@ -39,7 +39,6 @@ int main(int argc, char* argv[])
    // If parameter is not true, test fails
     #define IS_TRUE(x) { if (!(x)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; }
 
-
    std::cout << "Checking initial pose generation..." << std::endl;
     for (int i = 0; i < num_agents; i++) 
     {
@@ -67,6 +66,7 @@ int main(int argc, char* argv[])
 
     std::cout << "Checking in_vision_cone function..." << std::endl;
     {
+        // basic
         Pose p = Pose(0,0,0,0);
         Pose q = Pose(5.1, 0, 0, 0);
         cone_result cr = in_vision_cone(p, q, 5, M_PI);
@@ -76,6 +76,26 @@ int main(int argc, char* argv[])
         IS_TRUE(!in_vision_cone(p,q,5.1, M_PI).in_cone);
         IS_TRUE(in_vision_cone(p,q,5.2, M_PI).in_cone);
         IS_TRUE(!in_vision_cone(p,q,5.2, 0).in_cone);
+
+        // try some translation
+        p = Pose(6,6,0,0);
+        q = Pose(11.1, 6, 0, 0);
+        cr = in_vision_cone(p, q, 5, M_PI);
+        IS_TRUE(cr.dist_away == p.Distance(q));
+        IS_TRUE(!cr.in_cone);
+        IS_TRUE(!in_vision_cone(p,q,5.1, M_PI).in_cone);
+        IS_TRUE(in_vision_cone(p,q,5.2, M_PI).in_cone);
+        IS_TRUE(!in_vision_cone(p,q,5.2, 0).in_cone);
+
+        // try some rotation
+        p = Pose(-2,-2,0,0);
+        q = Pose(-1, -1, 0, 0);
+        cr = in_vision_cone(p, q, 1.5, M_PI);
+        IS_TRUE(cr.dist_away == p.Distance(q));
+        IS_TRUE(cr.in_cone);
+        IS_TRUE(!in_vision_cone(p,q,1, M_PI).in_cone);
+        IS_TRUE(!in_vision_cone(p,q,5, M_PI/2).in_cone);
+        IS_TRUE(in_vision_cone(p,q,5, 1.1 * M_PI / 2).in_cone);
 
     }
 
