@@ -35,8 +35,8 @@ class SimulationManager {
 
     void update();
     void reset();
-    void runTrials(int trials);
-    void runTrial();
+    void run_trials(int trials, double trial_length);
+    void run_trial(double trial_length);
 };
 
 

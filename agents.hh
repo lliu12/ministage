@@ -13,7 +13,7 @@ class Agent {
     SimulationData *sd;
     Pose *cur_pos; // only this one is a pointer because we want to be able to access this value from SimulationData
     // todo: update *cur_pos to be a smart pointer
-    Pose start_pos;
+    // Pose start_pos;
     Pose goal_pos;
     radians_t travel_angle;
 

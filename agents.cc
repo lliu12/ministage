@@ -55,6 +55,9 @@ void Agent::reset() {
     gen_start_goal_positions();
     goals_reached = 0;
     stop = 0;
+    fwd_speed = 0;
+    turn_speed = 0;
+    travel_angle = 0;
 }
 
 // make updates when robot reaches goal (increase goal counters, generate new goal, etc)
@@ -86,23 +89,19 @@ void Agent::sensing_update() {
 
 }
 
- // Set new position
+// Function to set new position
 void Agent::set_pos(Pose p) {
     *cur_pos = p;
 }
 
-
 //// Update robot position
 void Agent::position_update() {
     // find the change of pose due to our forward and turning motions
-    const Pose dp(fwd_speed * sp.dt, 0, 0,
-                    normalize(turn_speed * sp.dt));
+    const Pose dp(fwd_speed * sp.dt, 0, 0, normalize(turn_speed * sp.dt));
 
     // the pose we're trying to achieve
-    const Pose newpose(*cur_pos + dp);
-
+    Pose newpose(*cur_pos + dp);
     set_pos(newpose);
-
 
     // update location if world is periodic and robot is now out of bounds
     if (sp.periodic) {

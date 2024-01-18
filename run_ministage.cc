@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
     sp.r_upper = 8;
     sp.r_lower = 0;
     sp.verbose = false;
+    sp.dt = 1;
 
     SimulationManager sim = SimulationManager(sp);
 
@@ -98,6 +99,9 @@ int main(int argc, char* argv[])
         IS_TRUE(in_vision_cone(p,q,5, 1.1 * M_PI / 2).in_cone);
 
     }
+
+    // try running a trial
+    sim.run_trial(20);
 
 
     return 0;

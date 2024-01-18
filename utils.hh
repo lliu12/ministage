@@ -175,7 +175,7 @@ class SimulationData {
         ~SimulationData();
 
         sim_params sp;
-        uint64_t sim_time;
+        double sim_time;
         std::vector <Pose *> positions; // ordered by Agent id
 
 
