@@ -1,7 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-
 #include <cmath>
 #include <iostream>
 #include <vector>
@@ -32,6 +31,7 @@ typedef struct {
     // for agents
     meters_t sensing_range;
     radians_t sensing_angle;
+    meters_t goal_tolerance;
 
     meters_t stopdist;
     float cruisespeed;
@@ -42,6 +42,9 @@ typedef struct {
     int runsteps;
     bool randomize_runsteps;
     int turnspeed; 
+
+    // for gui
+    float gui_speedup;
 
 } sim_params;
 
@@ -69,6 +72,17 @@ inline double sgn(double a)
     return (a < 0 ? -1.0 : 1.0);
 }
 
+/** convert an angle in radians to degrees. */
+inline double rtod(double r)
+{
+  return (r * 180.0 / M_PI);
+}
+
+/** convert an angle in degrees to radians. */
+inline double dtor(double d)
+{
+  return (d * M_PI / 180.0);
+}
 
 /// Pose class describing a position in space
 /** Specify a 3 axis position, in x, y and heading. */

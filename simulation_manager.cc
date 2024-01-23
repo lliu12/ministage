@@ -30,6 +30,7 @@ void SimulationManager::update() {
     for (int i = 0; i < sp.num_agents; i++) {
         agents[i]->position_update();
     }
+
 }
 
 

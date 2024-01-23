@@ -53,6 +53,8 @@ class Agent {
     /// Update current position
     void set_pos(Pose p);
 
+    /// Update current position
+    Pose get_pos();
 
     // Constructor
     Agent(int agent_id, sim_params sim_params, SimulationData *sim_data, Pose *cur_pos_ptr);

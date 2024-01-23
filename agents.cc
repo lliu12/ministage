@@ -69,6 +69,11 @@ void Agent::goal_updates() {
 
 //// Use sensor information to update motion (turning and forward speed)
 void Agent::sensing_update() {
+    // first, check if robot has reached its goal and update variables accordingly
+    if (get_pos().Distance(goal_pos) < sp.goal_tolerance) {
+        goal_updates();
+    }
+
     std::vector <sensor_result> sensed = sd->sense(id, *cur_pos, sp.sensing_range, sp.sensing_angle);
     stop = sensed.size() > 0; // agent will stop if any neighbor was sensed in vision cone
 
@@ -92,6 +97,11 @@ void Agent::sensing_update() {
 // Function to set new position
 void Agent::set_pos(Pose p) {
     *cur_pos = p;
+}
+
+// Function to get Pose
+Pose Agent::get_pos() {
+    return *cur_pos;
 }
 
 //// Update robot position

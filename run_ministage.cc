@@ -17,20 +17,26 @@ int main(int argc, char* argv[])
 
 
 
-
     // Tests that MiniStage is working as expected
 
     std::cout << "Hello, MiniStage!" << std::endl;
 
     sim_params sp;
 
-    sp.num_agents = 5;
+    sp.num_agents = 1;
     sp.periodic = false;
     sp.circle_arena = false;
     sp.r_upper = 8;
     sp.r_lower = 0;
     sp.verbose = false;
+    sp.anglenoise = 0;
+    sp.anglebias = 0;
+    sp.sensing_angle = M_PI / 2.0; // maybe switch everything to work just in degrees????
+    sp.sensing_range = 3;
+    sp.cruisespeed = 0.6;
+    sp.goal_tolerance = 0.3;
     sp.dt = 1;
+    sp.gui_speedup = 15; // speed up gui compared to real time
 
     SimulationManager sim = SimulationManager(sp);
 
@@ -102,11 +108,15 @@ int main(int argc, char* argv[])
     }
 
     // try running a trial
+    std::cout << "Try running a trial..." << std::endl;
     sim.run_trial(20);
 
 
 
     // try opening a GUI window
+    std::cout << "Try opening a GUI window..." << std::endl;
+    sim.reset();
+
     Fl_Window win(500, 500, "Simple Canvas Example");
     Canvas gui = Canvas(sim, 0,0, win.w(), win.h());
 
@@ -118,28 +128,4 @@ int main(int argc, char* argv[])
     gui.startAnimation();
 
     return Fl::run();
-
-    // Fl_Window *window = new Fl_Window(340,180);
-    // Fl_Box *box = new Fl_Box(20,40,300,100,"Hello, World!");
-    // box->box(FL_UP_BOX);
-    // box->labelfont(FL_BOLD+FL_ITALIC);
-    // box->labelsize(36);
-    // box->labeltype(FL_SHADOW_LABEL);
-    // window->end();
-    // window->show(argc, argv);
-
-    // Fl::run();
-
-    // return 0;
 }
-
-// Run multiple trials of: 
-// Create world (Inside world: initialize positions, set up memoized locations by grid, etc.)
-
-// Simulate robot behavior (Two update steps, one to update sensors, one to update positions)
-
-// GUI?? 
-
-// Save data (Inside world? )
-
-// Clean up to avoid memory leaks!

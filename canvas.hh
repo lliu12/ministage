@@ -17,8 +17,22 @@
 
 class Canvas : public Fl_Gl_Window {
     public:
-    Canvas(SimulationManager sim, int x, int y, int width, int height);
+    Canvas(SimulationManager simulation, int x, int y, int width, int height);
     ~Canvas();
+
+    int x_test;
+    int y_test;
+
+    // double _pitch; // left-right (about y)
+    // double _yaw; // up-down (about x)
+    // double _x, _y, _z;
+    // double _scale;
+    // double _pixels_width;
+    // double _pixels_height;
+    // double _y_min;
+    // double _y_max;
+
+    SimulationManager sim;
 
     void draw() override;
     int handle(int event) override;
@@ -26,6 +40,26 @@ class Canvas : public Fl_Gl_Window {
     static void TimerCallback(void* userdata);
     void startAnimation();
 
-    int x_;
-    int y_;
+    // void scale(double scale, double shift_x, double w, double shift_y, double h);
+    // void move(double x, double y);
+
+
 };
+
+// utility functions for drawing & converting coordinates
+inline void coord_shift(double x, double y, double z, double a) {
+    glTranslatef(x, y, z);
+    glRotatef(rtod(a), 0, 0, 1);
+}
+
+inline void pose_shift(const Pose &pose) {
+    coord_shift(pose.x, pose.y, pose.z, pose.a);
+}
+
+inline void pose_inverse_shift(const Pose &pose) {
+    coord_shift(0, 0, 0, -pose.a);
+    coord_shift(-pose.x, -pose.y, -pose.z, 0);
+}
+
+
+
