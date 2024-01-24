@@ -4,10 +4,15 @@
 Agent::Agent(int agent_id, sim_params sim_params, SimulationData *sim_data, Pose *cur_pos_ptr) {
     sp = sim_params;
     sd = sim_data;
+    // if(agent_id > -1) {
+    //     std::cout << "init agent: " << sd << std::endl;
+    // }
+    
     id = agent_id;
     cur_pos = cur_pos_ptr; // cur_pos now points to the same location as cur_pos_ptr
     reset();
 }
+Agent::Agent() {}
 
 // Destructor
 Agent::~Agent(void){}
@@ -74,7 +79,7 @@ void Agent::sensing_update() {
         goal_updates();
     }
 
-    std::vector <sensor_result> sensed = sd->sense(id, *cur_pos, sp.sensing_range, sp.sensing_angle);
+    std::vector <sensor_result> sensed = sd->sense(id, get_pos(), sp.sensing_range, sp.sensing_angle);
     stop = sensed.size() > 0; // agent will stop if any neighbor was sensed in vision cone
 
     travel_angle = angle_to_goal();
@@ -100,7 +105,7 @@ void Agent::set_pos(Pose p) {
 }
 
 // Function to get Pose
-Pose Agent::get_pos() {
+Pose Agent::get_pos() const {
     return *cur_pos;
 }
 

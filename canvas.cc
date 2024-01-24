@@ -3,7 +3,6 @@
 Canvas::Canvas(SimulationManager simulation, int x, int y, int width, int height)
     : Fl_Gl_Window(x, y, width, height), sim(simulation)
 {
-    x_test = 0;
 }
 
 Canvas::~Canvas() {
@@ -16,7 +15,7 @@ void Canvas::draw() {
 
     gluOrtho2D(0.0, w(), 0.0, h()); // set coordinate system with origin in lower left corner
     glTranslatef(w() / 2, h() / 2, 0); // translate origin to center
-    glScalef(5, 5, 1.0f); // zoom in a bit
+    glScalef(sim.sp.gui_zoom, sim.sp.gui_zoom, 1.0f); // zoom in a bit
 
     // GL settings
     glEnable(GL_BLEND);
@@ -30,25 +29,6 @@ void Canvas::draw() {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // White bg
     glClear(GL_COLOR_BUFFER_BIT);         // Clear the color buffer (background)
 
-    // glPushMatrix();
-    //     glTranslatef(-.5, 0, 0); // okay, this worked! moves it -.5 of screen width. need to add push, translate, and pop. 
-        
-    //     // setup code
-    //     glColor4f(1.0f, 0.0f, 0.0f, 0.2f);
-    //     static GLUquadricObj *q;
-    //     q = gluNewQuadric();
-    //     gluQuadricNormals (q,GLU_TRUE);
-    //     gluQuadricTexture (q,GLU_TRUE);
-
-    //     // the gluDisk based shapes
-    //     // gluPartialDisk (q, 60, 80, 2, 1,0, 240); 
-    //     gluPartialDisk (q, 0.6, 0.8, 2, 1,0, 240); 
-    //     // gluPartialDisk (q, 0.0, 0.8, 30, 1, -45, 270); // FOV
-    // glPopMatrix();
-
-    // Move the rectangle horizontally
-    x_test += 1;
-
     // Draw robots
     for (int i = 0; i < sim.sp.num_agents; i++) {
         // Pose agent_pose = sim.agents[i]->get_pos();
@@ -59,54 +39,37 @@ void Canvas::draw() {
             glColor4f(.5, .5, .5, .8); // gray
             GLUquadric *robot_pos = gluNewQuadric();
             gluQuadricDrawStyle(robot_pos, GLU_FILL);
-            gluDisk(robot_pos, 0, 1, 20, 1);
+            gluDisk(robot_pos, 0, 0.3, 20, 1);
             gluDeleteQuadric(robot_pos);
 
             // draw wedge for robot FOV
             glColor4f(0, 0, 1, 0.3); // blue
             GLUquadric *fov = gluNewQuadric();
             gluQuadricDrawStyle(fov, GLU_FILL);
-            // gluPartialDisk (quadric, 0.6, 5, 2, 1,0, 0); 
-            
-            gluPartialDisk(fov, 0, sim.sp.sensing_range,
-                        20, // slices
-                        1, // loops
+            gluPartialDisk(fov, 0, sim.sp.sensing_range, 20, 1,
                         rtod(M_PI / 2.0 + sim.sp.sensing_angle / 2.0), // start angle
                         rtod(-sim.sp.sensing_angle)); // sweep angle
             gluDeleteQuadric(fov);
         glPopMatrix();
 
-
-
-        glPushMatrix(); // enter local agent coordinates
-        pose_shift(sim.agents[i]->goal_pos);
-            // draw small point at robot goal
-            glColor4f(1, 0, 1, .8); // magenta
-            GLUquadric *goal = gluNewQuadric();
-            gluQuadricDrawStyle(goal, GLU_FILL);
-            gluDisk(goal, 0, 0.4, 20, 1);
-            gluDeleteQuadric(goal);
+        // draw small point at robot goal
+        glPushMatrix(); 
+            pose_shift(sim.agents[i]->goal_pos);
+                glColor4f(1, 0, 1, .8); // magenta
+                GLUquadric *goal = gluNewQuadric();
+                gluQuadricDrawStyle(goal, GLU_FILL);
+                gluDisk(goal, 0, 0.2, 20, 1);
+                gluDeleteQuadric(goal);
         glPopMatrix();
 
         // update simulation
-        sim.update();
+        if (!paused) { sim.update(); }
     }
-
-
-    // Draw a rectangle
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glBegin(GL_POLYGON);
-    glVertex2f(x_test, y_test + 15);
-    glVertex2f(x_test + 5, y_test + 15);
-    glVertex2f(x_test + 5, y_test + 15 + 10);
-    glVertex2f(x_test, y_test + 15 + 10);
-    glEnd();
 
     // // // Swap buffers to display the rendered content
     // glFlush();
     // swap_buffers();
 
-    // Schedule a redraw to create the animation loop
     redraw();
 
 }
@@ -122,13 +85,31 @@ void Canvas::startAnimation() {
 }
 
 int Canvas::handle(int event) {
-    // switch(event) {
-    //     case FL_MOUSEWHEEL:
-    //         // scale(Fl::event_dy(), Fl::event_x(), w(), Fl::event_y(), h());
-    //         // // invalidate();
-    //         // redraw();
-    //         return 1;
-    // }
+    switch(event) {
+        case FL_PUSH:
+                // Handle mouse click event
+                printf("mouse clicked \n");
+                return 1; // Returning 1 means we handled the event
+
+        case FL_MOUSEWHEEL:
+            // scale(Fl::event_dy(), Fl::event_x(), w(), Fl::event_y(), h());
+            // // invalidate();
+            // redraw();
+            return 1;
+
+        // these focus events must return 1 to allow keyboard events
+        case FL_FOCUS:
+            return 1;
+        case FL_UNFOCUS:
+            return 1;
+
+        case FL_KEYBOARD:
+            switch(Fl::event_key()) {
+                case 'p':
+                    paused = !paused;
+            }
+            return 1;
+    }
 
     return Fl_Gl_Window::handle(event);
 }

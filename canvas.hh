@@ -20,8 +20,7 @@ class Canvas : public Fl_Gl_Window {
     Canvas(SimulationManager simulation, int x, int y, int width, int height);
     ~Canvas();
 
-    int x_test;
-    int y_test;
+    bool paused;
 
     // double _pitch; // left-right (about y)
     // double _yaw; // up-down (about x)

@@ -4,7 +4,9 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <set>
 #include "random.hh"
+class Agent;
 
 
 /** Metres: floating point unit of distance */
@@ -25,7 +27,7 @@ typedef struct {
 
     meters_t model_init_mindist; ///< distance to perturb models away from each other when using AdjustModelPositions function
     int model_init_iters; ///< maximum iterations when using AdjustModelPositions function
-    uint64_t dt; // how much to update by during each step
+    float dt; // how much to update by during each step
     bool verbose;
 
     // for agents
@@ -41,10 +43,11 @@ typedef struct {
     float anglebias;
     int runsteps;
     bool randomize_runsteps;
-    int turnspeed; 
+    float turnspeed; 
 
     // for gui
     float gui_speedup;
+    int gui_zoom;
 
 } sim_params;
 
@@ -83,6 +86,11 @@ inline double dtor(double d)
 {
   return (d * M_PI / 180.0);
 }
+
+
+
+
+
 
 /// Pose class describing a position in space
 /** Specify a 3 axis position, in x, y and heading. */
@@ -181,10 +189,14 @@ inline cone_result in_vision_cone(Pose agent_pos, Pose nbr_pos, meters_t my_sens
     return result;
 }
 
+
+
+
 /// Simulation Data Class
+// Stores data about simulation time and agent positions
+// Computes sensing information
 class SimulationData {
     public: 
-        SimulationData();
         SimulationData(sim_params sim_params);
         ~SimulationData();
 
@@ -192,9 +204,27 @@ class SimulationData {
         double sim_time;
         std::vector <Pose *> positions; // ordered by Agent id
 
+        void update(std::vector <Agent *> agents);
 
         void reset();
         std::vector <sensor_result> sense(int agent_id, Pose agent_pos, meters_t sensing_range, radians_t sensing_angle);
+
+        struct ltx {
+            bool operator()(const Agent *a, const Agent *b) const;
+        };
+
+        struct lty {
+            bool operator()(const Agent *a, const Agent *b) const;
+        };
+    
+        /** maintain a set of agents sorted by pose.x, for quickly finding neighbors */
+        std::set<Agent *, ltx> agents_byx;
+
+        /** maintain a set of agents sorted by pose.y, for quickly finding neighbors */
+        std::set<Agent *, lty> agents_byy;
+
+        // check if the byx, byy sets are properly sorted
+        bool sets_sorted();
 
 };
 

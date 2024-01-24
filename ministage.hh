@@ -29,7 +29,7 @@ class SimulationManager {
     ~SimulationManager();
 
     sim_params sp;
-    SimulationData sd;
+    SimulationData *sd;
     /** Pointers to all the agents in this world. */
     std::vector <Agent *> agents;
 
