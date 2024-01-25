@@ -4,13 +4,6 @@
 // Constructor
 SimulationData::SimulationData(sim_params *sim_params) {
     sp = sim_params;
-
-    // Set up Pose pointers
-    for (int i = 0; i < sp->num_agents; i++) {
-        positions.push_back(new Pose());
-    }
-
-    // Set up sim_time pointer
     sim_time = 0;
 }
 
@@ -20,8 +13,7 @@ SimulationData::~SimulationData(){}
 // Reset
 void SimulationData::reset() {
     sim_time = 0;
-    agents_byx.clear();
-    agents_byy.clear();
+    // don't need to clear the byx, byy vectors because they store agent pointers and the agents reset themselves
 }
 
 
@@ -47,15 +39,9 @@ void SimulationData::update(std::vector <Agent *> agents) {
     // update simulation time
     sim_time += sp->dt;
 
-    // update sorted agent positions
-    agents_byx.clear();
-    agents_byy.clear();
-
-    for (Agent *a : agents) {
-        agents_byx.insert(a);
-        agents_byy.insert(a);
-    }
-
+    // update for vectors
+    std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
+    std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
 }
 
 
@@ -64,34 +50,25 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
     std::vector <sensor_result> result;
 
     // std::cout << "\nTesting fiducial sorting in sensor function..." << std::endl;
-    // bool sorted = sets_sorted();
-    
-    // // std::cout << "Testing narrowing down nearby neighbors..." << std::endl;
-    // Pose dummy_pose;
-    // Agent edge(-1, sp, this, &dummy_pose); // dummy model used to find bounds in the sets
 
+    // find nearby neighbors with vectors
     // first, find a smaller collection of nearby neighbors
     double rng = sp->sensing_range;
     Pose gp = agent_pos;
-    Pose dummy_pose;
-    Agent edge(-1, sp, this, &dummy_pose); // dummy model used to find bounds in the sets
+    Agent edge(-1, sp, this); // dummy model used to find bounds in the sets
+    std::vector<Agent *>::iterator xmin, xmax, ymin, ymax;
 
     edge.set_pos(Pose(gp.x - rng, gp.y, 0, 0)); // LEFT
-    std::set<Agent *, ltx>::iterator xmin =
-        agents_byx.lower_bound(&edge); // O(log(n))
+    xmin = std::lower_bound(agents_byx_vec.begin(), agents_byx_vec.end(), &edge, ltx());
 
     edge.set_pos(Pose(gp.x + rng, gp.y, 0, 0)); // RIGHT
-    // edge.get_pos().Print("dummy pose currently: ");
-    const std::set<Agent *, ltx>::iterator xmax =
-        agents_byx.upper_bound(&edge);
+    xmax = std::upper_bound(agents_byx_vec.begin(), agents_byx_vec.end(), &edge, ltx());
 
     edge.set_pos(Pose(gp.x, gp.y - rng, 0, 0)); // BOTTOM
-    std::set<Agent *, ltx>::iterator ymin =
-        agents_byy.lower_bound(&edge);
+    ymin = std::lower_bound(agents_byy_vec.begin(), agents_byy_vec.end(), &edge, lty());
 
     edge.set_pos(Pose(gp.x, gp.y + rng, 0, 0)); // TOP
-    const std::set<Agent *, ltx>::iterator ymax =
-        agents_byy.upper_bound(&edge);
+    ymax = std::upper_bound(agents_byy_vec.begin(), agents_byy_vec.end(), &edge, lty());
 
     // put these models into sets keyed on pointer
     std::set<Agent *> horiz, vert;
@@ -124,27 +101,27 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
     return result;
 }
 
-bool SimulationData::sets_sorted() {
+bool SimulationData::vecs_sorted() {
     bool sorted = true;
 
     const char* redText = "\033[1;31m";
     const char* resetText = "\033[0m";
 
-    Agent *begin_agent = *agents_byx.begin();
+    Agent *begin_agent = *agents_byx_vec.begin();
     double last_x = begin_agent->get_pos().x;
-    for (Agent *a : agents_byx) {
+    for (Agent *a : agents_byx_vec) {
         if(!(last_x <= a->get_pos().x)) {
-            printf("%sx-positions not sorted!%s\n", redText, resetText);
+            printf("%sx-positions not sorted in vec!%s\n", redText, resetText);
             sorted = false;
         }
         last_x = a->get_pos().x;
     }
 
-    begin_agent = *agents_byy.begin();
+    begin_agent = *agents_byy_vec.begin();
     double last_y = begin_agent->get_pos().y;
-    for (Agent *a : agents_byx) {
+    for (Agent *a : agents_byx_vec) {
         if(!(last_y <= a->get_pos().y)) {
-            printf("%sy-positions not sorted!%s\n", redText, resetText);
+            printf("%sy-positions not sorted in vec!%s\n", redText, resetText);
             sorted = false;
         }
         last_x = a->get_pos().y;

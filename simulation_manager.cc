@@ -5,10 +5,13 @@ SimulationManager::SimulationManager(sim_params sim_params) {
     sp = sim_params;
     sd = new SimulationData(&sim_params);
 
-    // Create agents
+    // Create agents vector and pass copies to SimulationData
     for (int i = 0; i < sp.num_agents; i++) {
-        agents.push_back(new Agent(i, &sp, sd, sd->positions[i]));
+        agents.push_back(new Agent(i, &sp, sd));
     }
+    sd->agents_byx_vec = agents;
+    sd->agents_byy_vec = agents;
+
 }
 
 // Destructor
@@ -20,23 +23,17 @@ void SimulationManager::update() {
     sd->update(agents);
 
     // update all agent sensors
-    for (Agent *a : agents) {
-        a->sensing_update();
-    }
+    for (Agent *a : agents) { a->sensing_update(); }
 
     // update all agent positions
-    // working with the assumption that they will not collide due to sufficient stop conditions
-    for (Agent *a : agents) {
-        a->position_update();
-    }
+    // working with the assumption that they should not collide in this one step due to sufficient stop conditions
+    for (Agent *a : agents) { a->position_update(); }
 }
 
 
 void SimulationManager::reset() {
     sd->reset(); // needs to happen first so that sim_time gets reset to 0
-    for (int i = 0; i < sp.num_agents; i++) {
-            agents[i]->reset();
-    }
+    for (Agent *a : agents) { a->reset(); }
 }
 
 

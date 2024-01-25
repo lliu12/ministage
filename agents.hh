@@ -59,7 +59,7 @@ class Agent {
     Pose get_pos() const;
 
     // Constructor
-    Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data, Pose *cur_pos_ptr);
+    Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data);
     Agent();
 
     // Destructor

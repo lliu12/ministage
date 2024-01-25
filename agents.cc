@@ -1,11 +1,11 @@
 #include "agents.hh"
 
 // Constructor
-Agent::Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data, Pose *cur_pos_ptr) {
+Agent::Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data) {
     sp = sim_params;
     sd = sim_data;    
     id = agent_id;
-    cur_pos = cur_pos_ptr; // cur_pos now points to the same location as cur_pos_ptr
+    cur_pos = new Pose(); // = cur_pos_ptr; // cur_pos now points to the same location as cur_pos_ptr
     reset();
 }
 Agent::Agent() {}

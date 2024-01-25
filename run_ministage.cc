@@ -6,23 +6,10 @@
 
 int main(int argc, char* argv[])
 {
-    
-//   if (argc < 2) {
-//     // report version
-//     std::cout << argv[0] << " Version " << Tutorial_VERSION_MAJOR << "."
-//               << Tutorial_VERSION_MINOR << std::endl;
-//     std::cout << "Usage: " << argv[0] << " number" << std::endl;
-//     return 1;
-//   }
-//   // convert input to double
-//   const double inputValue = std::stod(argv[1]);
-
-
-
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 50;
+    sp.num_agents = 128;
     sp.periodic = false;
     sp.circle_arena = false;
     sp.r_upper = 8;
@@ -47,34 +34,6 @@ int main(int argc, char* argv[])
    // Run sanity checks
    // If parameter is not true, test fails
     #define IS_TRUE(x) { if (!(x)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; }
-
-   std::cout << "Checking initial pose generation..." << std::endl;
-    for (int i = 0; i < num_agents; i++) 
-    {
-        // sim.agents[i]->get_pos().Print("");
-        // sim.sd->positions[i]->Print("");
-        // std::cout << sim.agents[i]->cur_pos << std::endl;
-        // std::cout << sim.sd->positions[i] << std::endl;
-        
-        IS_TRUE(sim.agents[i]->cur_pos == sim.sd->positions[i]); // simdata and agent pose pointers match
-        IS_TRUE(*sim.agents[i]->cur_pos == *sim.sd->positions[i]); // simdata and agent pose values match
-    }
-
-    std::cout << "Checking case where agent updates Poses..." << std::endl;
-    for (int i = 0; i < num_agents; i++) 
-    {
-        sim.agents[i]->gen_start_goal_positions();
-        IS_TRUE(sim.agents[i]->cur_pos == sim.sd->positions[i]); // simdata and agent pose pointers match
-        IS_TRUE(*sim.agents[i]->cur_pos == *sim.sd->positions[i]); // simdata and agent pose values match
-    }
-
-    std::cout << "Checking case where simdata updates Poses..." << std::endl;
-    for (int i = 0; i < num_agents; i++) 
-    {
-        *sim.sd->positions[i] = Pose::Random(0, 1, 0, 1);
-        IS_TRUE(sim.agents[i]->cur_pos == sim.sd->positions[i]); // simdata and agent pose pointers match
-        IS_TRUE(*sim.agents[i]->cur_pos == *sim.sd->positions[i]); // simdata and agent pose values match
-    }
 
     std::cout << "Checking in_vision_cone function..." << std::endl;
     {
@@ -113,47 +72,50 @@ int main(int argc, char* argv[])
 
     printf("Testing nearest neighbor search...\n");
     {
-        for (int k = 0; k<1; k++) {
+        for (int k = 0; k<5; k++) {
 
             sim.sd->update(sim.agents);
 
             printf("Testing fiducial sorting...\n");
-            Agent *begin_agent = *sim.sd->agents_byx.begin();
+            // bool sorted = sim.sd->vecs_sorted();
+            Agent *begin_agent = *sim.sd->agents_byx_vec.begin();
             double last_x = begin_agent->get_pos().x;
-            for (Agent *a : sim.sd->agents_byx) {
+            for (Agent *a : sim.sd->agents_byx_vec) {
                 IS_TRUE(last_x <= a->get_pos().x);
                 last_x = a->get_pos().x;
+                // a->get_pos().Print("Sorted agents by x: ");
             }
 
             printf("Testing narrowing down nearby neighbors...\n");
-            Pose dummy_pose;
-            Agent edge(-1, &sp, sim.sd, &dummy_pose); // dummy model used to find bounds in the sets
+            Agent edge(-1, &sp, sim.sd); // dummy model used to find bounds in the sets
 
             for (Agent *a : sim.agents) {
                 Pose gp = a->get_pos();
-                edge.set_pos(Pose(gp.x - sp.sensing_range, gp.y, 0, 0)); // LEFT
-                std::set<Agent *, SimulationData::ltx>::iterator xmin = sim.sd->agents_byx.lower_bound(&edge);
-                // Agent *xminAgent = *xmin;
-                IS_TRUE(xmin != sim.sd->agents_byx.end());
+                std::vector<Agent *>::iterator xmin;
+                edge.set_pos(Pose(gp.x - sim.sp.sensing_range, gp.y, 0, 0)); // LEFT
+                xmin = std::lower_bound(sim.sd->agents_byx_vec.begin(), sim.sd->agents_byx_vec.end(), &edge, SimulationData::ltx());
+                
+                Agent *xminAgent = *xmin;
+                IS_TRUE(xminAgent->get_pos().x >= edge.get_pos().x);
+                IS_TRUE(xmin != sim.sd->agents_byx_vec.end());
+                // xminAgent->cur_pos->Print("");
             }
         }
     }
 
-    if(0) {
+    if(1) {
         // try running a trial
         printf("Try running a trial...\n");
         auto start_time = std::chrono::high_resolution_clock::now();
         sim.reset();
-        sim.run_trial(1200);
+        sim.run_trials(10, 1200);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
         std::cout << "Time taken to run: " << duration.count() << " seconds" << std::endl;
     }
 
 
-    if (1) {    
-
-
+    if (1) {   
         // try opening a GUI window
         printf("Try opening a GUI window...\n");
         sim.reset();

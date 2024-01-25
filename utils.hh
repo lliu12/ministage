@@ -202,7 +202,7 @@ class SimulationData {
 
         sim_params *sp;
         double sim_time;
-        std::vector <Pose *> positions; // ordered by Agent id
+        // std::vector <Pose *> positions; // ordered by Agent id
 
         void update(std::vector <Agent *> agents);
 
@@ -216,15 +216,15 @@ class SimulationData {
         struct lty {
             bool operator()(const Agent *a, const Agent *b) const;
         };
-    
-        /** maintain a set of agents sorted by pose.x, for quickly finding neighbors */
-        std::set<Agent *, ltx> agents_byx;
+            
+        /** maintain a vector of agents sorted by pose.x, for quickly finding neighbors */
+        std::vector<Agent *> agents_byx_vec;
 
-        /** maintain a set of agents sorted by pose.y, for quickly finding neighbors */
-        std::set<Agent *, lty> agents_byy;
+        /** maintain a vector of agents sorted by pose.y, for quickly finding neighbors */
+        std::vector<Agent *> agents_byy_vec;
 
-        // check if the byx, byy sets are properly sorted
-        bool sets_sorted();
+        // check if the byx, byy vecs are properly sorted
+        bool vecs_sorted();
 
 };
 
