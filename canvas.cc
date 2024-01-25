@@ -43,7 +43,7 @@ void Canvas::draw() {
             gluDeleteQuadric(robot_pos);
 
             // draw wedge for robot FOV
-            glColor4f(0, 0, 1, 0.3); // blue
+            glColor4f(0, 0, 1, 0.2); // blue
             GLUquadric *fov = gluNewQuadric();
             gluQuadricDrawStyle(fov, GLU_FILL);
             gluPartialDisk(fov, 0, sim->sp.sensing_range, 20, 1,
@@ -107,6 +107,12 @@ int Canvas::handle(int event) {
             switch(Fl::event_key()) {
                 case 'p':
                     paused = !paused;
+
+                case FL_Right:
+                    if (paused) {
+                        sim->update();
+                        redraw();
+                    }
             }
             return 1;
     }

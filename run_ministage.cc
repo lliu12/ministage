@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 128;
+    sp.num_agents = 50;
     sp.periodic = false;
     sp.circle_arena = false;
     sp.r_upper = 8;
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    if(1) {
+    if(0) {
         // try running a trial
         printf("Try running a trial...\n");
         auto start_time = std::chrono::high_resolution_clock::now();

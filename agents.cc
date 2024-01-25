@@ -45,9 +45,6 @@ void Agent::gen_start_goal_positions() {
     goal_pos = random_goal(); // set goal
     set_pos(random_goal());
     goal_birth_time = sd->sim_time;
-    
-    // start_pos = *cur_pos; // not a pointer - should not change when cur_pos is eventually updated
-    // issue: start pos gets reset every time, doesn't store the true start pos. revisit when testing trials method
 }
 
 

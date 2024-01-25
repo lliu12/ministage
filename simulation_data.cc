@@ -20,7 +20,8 @@ SimulationData::~SimulationData(){}
 // Reset
 void SimulationData::reset() {
     sim_time = 0;
-    // Poses should be reset by the agents in Agent::reset()
+    agents_byx.clear();
+    agents_byy.clear();
 }
 
 
@@ -69,21 +70,6 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
     // Pose dummy_pose;
     // Agent edge(-1, sp, this, &dummy_pose); // dummy model used to find bounds in the sets
 
-    // Pose gp = agent_pos;
-    // sp->.set_pos(Pose(gp.x - sp->sensing_range, gp.y, 0, 0)); // LEFT
-    // std::set<Agent *, SimulationData::ltx>::iterator xmin = agents_byx.lower_bound(&sp->);
-    // // Agent *xminAgent = *xmin;
-    // if(xmin == agents_byx.end()) {
-    //     printf("left-filtered set empty for agent %i \n", agent_id);
-    // }
-    // }
-
-
-
-
-    // ------- above this is debugging
-
-
     // first, find a smaller collection of nearby neighbors
     double rng = sp->sensing_range;
     Pose gp = agent_pos;
@@ -93,13 +79,6 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
     edge.set_pos(Pose(gp.x - rng, gp.y, 0, 0)); // LEFT
     std::set<Agent *, ltx>::iterator xmin =
         agents_byx.lower_bound(&edge); // O(log(n))
-
-    // printf("\n\n looking inside left-bounded set... \n");
-    // edge.get_pos().Print("dummy pose currently: ");
-    // for (Agent *a : xmin) {
-    //     a->get_pos().Print("");
-    // }
-
 
     edge.set_pos(Pose(gp.x + rng, gp.y, 0, 0)); // RIGHT
     // edge.get_pos().Print("dummy pose currently: ");
@@ -127,23 +106,6 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
     std::vector<Agent *> nearby;
     std::set_intersection(horiz.begin(), horiz.end(), vert.begin(), vert.end(), std::inserter(nearby, nearby.end()));
 
-    // printf("\n\n neighbors with horizontal position near agent %i... \n", agent_id);
-    // agent_pos.Print("Agent pose: ");
-    // if (xmin != agents_byx.end()) {
-    //     Agent* xminAgent = *xmin;
-    //     printf("agent id: %i \n", xminAgent->id);
-    //     xminAgent->get_pos().Print("Left bound agent's position"); // sometimes this segfaults...
-    // }
-    // else {
-    //     printf("xmin is past end of set\n");
-    // }
-
-    // for (Agent *a : horiz) {
-    //     a->get_pos().Print("neighbor: ");
-    // }
-    
-
-
     // now test more carefully for whether these neighbors are in agent's FOV
     int num_nearby = nearby.size();
     for (int i = 0; i < num_nearby; i++) {
@@ -155,29 +117,9 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
             sensor_result new_result;
             new_result.dist_away = cr.dist_away;
             new_result.id = nbr_id;
-
-            // // printf("blocker id: %i", nbr_id);
-            // nbr_pos.Print("I am nearby!");
-
             result.push_back(new_result);
         }
     }
-
-
-    // working but slow code
-    // for (int i = 0; i < sp->num_agents; i++) {
-    //     Pose nbr_pos = *positions[i];
-    //     cone_result cr = in_vision_cone(agent_pos, nbr_pos, sp->sensing_range, sp->sensing_angle);
-    //     if (cr.in_cone && agent_id != i) {
-    //         sensor_result new_result;
-    //         new_result.dist_away = cr.dist_away;
-    //         new_result.id = i;
-
-    //         result.push_back(new_result);
-
-    //         nbr_pos.Print("I am nearby!");
-    //     }
-    // }
 
     return result;
 }
@@ -185,20 +127,14 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
 bool SimulationData::sets_sorted() {
     bool sorted = true;
 
+    const char* redText = "\033[1;31m";
+    const char* resetText = "\033[0m";
+
     Agent *begin_agent = *agents_byx.begin();
     double last_x = begin_agent->get_pos().x;
     for (Agent *a : agents_byx) {
         if(!(last_x <= a->get_pos().x)) {
-            // ANSI escape code for red text
-            const char* redText = "\033[1;31m";
-
-            // Reset ANSI escape code to default
-            const char* resetText = "\033[0m";
-
-            // Your text goes here
             printf("%sx-positions not sorted!%s\n", redText, resetText);
-
-
             sorted = false;
         }
         last_x = a->get_pos().x;
@@ -208,16 +144,7 @@ bool SimulationData::sets_sorted() {
     double last_y = begin_agent->get_pos().y;
     for (Agent *a : agents_byx) {
         if(!(last_y <= a->get_pos().y)) {
-            // ANSI escape code for red text
-            const char* redText = "\033[1;31m";
-
-            // Reset ANSI escape code to default
-            const char* resetText = "\033[0m";
-
-            // Your text goes here
             printf("%sy-positions not sorted!%s\n", redText, resetText);
-
-
             sorted = false;
         }
         last_x = a->get_pos().y;
