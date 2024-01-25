@@ -7,6 +7,9 @@ project(Run_MiniStage)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# set optimization level
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+
 # Add compiler flags to suppress deprecation warnings
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 add_compile_options(-Wno-deprecated-declarations)

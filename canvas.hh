@@ -17,7 +17,7 @@
 
 class Canvas : public Fl_Gl_Window {
     public:
-    Canvas(SimulationManager simulation, int x, int y, int width, int height);
+    Canvas(SimulationManager *simulation, int x, int y, int width, int height);
     ~Canvas();
 
     bool paused;
@@ -31,7 +31,7 @@ class Canvas : public Fl_Gl_Window {
     // double _y_min;
     // double _y_max;
 
-    SimulationManager sim;
+    SimulationManager *sim;
 
     void draw() override;
     int handle(int event) override;

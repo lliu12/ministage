@@ -11,7 +11,7 @@ class SimulationData;
 class Agent {
     public:
     int id; 
-    sim_params sp;
+    sim_params *sp;
     SimulationData *sd;
     Pose *cur_pos; // only this one is a pointer because we want to be able to access this value from SimulationData
     // todo: update *cur_pos to be a smart pointer
@@ -59,7 +59,7 @@ class Agent {
     Pose get_pos() const;
 
     // Constructor
-    Agent(int agent_id, sim_params sim_params, SimulationData *sim_data, Pose *cur_pos_ptr);
+    Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data, Pose *cur_pos_ptr);
     Agent();
 
     // Destructor

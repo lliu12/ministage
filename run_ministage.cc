@@ -1,6 +1,8 @@
 // This is a more lightweight, customized version of RTV's Stage simulation.
+#include <chrono>
 #include "ministage.hh"
 #include "canvas.hh"
+
 
 int main(int argc, char* argv[])
 {
@@ -18,12 +20,9 @@ int main(int argc, char* argv[])
 
 
     // Tests that MiniStage is working as expected
-
-    std::cout << "Hello, MiniStage!" << std::endl;
-
     sim_params sp;
 
-    sp.num_agents = 10;
+    sp.num_agents = 128;
     sp.periodic = false;
     sp.circle_arena = false;
     sp.r_upper = 8;
@@ -46,7 +45,6 @@ int main(int argc, char* argv[])
    int num_agents = sp.num_agents;
 
    // Run sanity checks
-
    // If parameter is not true, test fails
     #define IS_TRUE(x) { if (!(x)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; }
 
@@ -113,14 +111,13 @@ int main(int argc, char* argv[])
 
     }
 
-    std::cout << "Testing nearest neighbor search..." << std::endl;
+    printf("Testing nearest neighbor search...\n");
     {
-        for (int k = 0; k <2; k++) {
+        for (int k = 0; k<1; k++) {
 
             sim.sd->update(sim.agents);
-            // sim.update();
 
-            std::cout << "Testing fiducial sorting..." << std::endl;
+            printf("Testing fiducial sorting...\n");
             Agent *begin_agent = *sim.sd->agents_byx.begin();
             double last_x = begin_agent->get_pos().x;
             for (Agent *a : sim.sd->agents_byx) {
@@ -128,10 +125,9 @@ int main(int argc, char* argv[])
                 last_x = a->get_pos().x;
             }
 
-
-            std::cout << "Testing narrowing down nearby neighbors..." << std::endl;
+            printf("Testing narrowing down nearby neighbors...\n");
             Pose dummy_pose;
-            Agent edge(-1, sp, sim.sd, &dummy_pose); // dummy model used to find bounds in the sets
+            Agent edge(-1, &sp, sim.sd, &dummy_pose); // dummy model used to find bounds in the sets
 
             for (Agent *a : sim.agents) {
                 Pose gp = a->get_pos();
@@ -140,25 +136,31 @@ int main(int argc, char* argv[])
                 // Agent *xminAgent = *xmin;
                 IS_TRUE(xmin != sim.sd->agents_byx.end());
             }
-
         }
     }
 
-    if (1) {    
+    if(1) {
         // try running a trial
-        std::cout << "Try running a trial..." << std::endl;
+        printf("Try running a trial...\n");
+        auto start_time = std::chrono::high_resolution_clock::now();
         sim.reset();
-        sim.run_trial(20);
+        sim.run_trial(1200);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        std::cout << "Time taken to run: " << duration.count() << " seconds" << std::endl;
+    }
 
+
+    if (1) {    
 
 
         // try opening a GUI window
-        std::cout << "Try opening a GUI window..." << std::endl;
+        printf("Try opening a GUI window...\n");
         sim.reset();
 
 
-        Fl_Window win(500, 500, "Simple Canvas Example");
-        Canvas gui = Canvas(sim, 0,0, win.w(), win.h());
+        Fl_Window win(500, 500, "MiniStage");
+        Canvas gui = Canvas(&sim, 0,0, win.w(), win.h());
 
         // win.resizable(&gui);
 

@@ -1,6 +1,6 @@
 #include "canvas.hh"
 
-Canvas::Canvas(SimulationManager simulation, int x, int y, int width, int height)
+Canvas::Canvas(SimulationManager *simulation, int x, int y, int width, int height)
     : Fl_Gl_Window(x, y, width, height), sim(simulation)
 {
 }
@@ -15,7 +15,7 @@ void Canvas::draw() {
 
     gluOrtho2D(0.0, w(), 0.0, h()); // set coordinate system with origin in lower left corner
     glTranslatef(w() / 2, h() / 2, 0); // translate origin to center
-    glScalef(sim.sp.gui_zoom, sim.sp.gui_zoom, 1.0f); // zoom in a bit
+    glScalef(sim->sp.gui_zoom, sim->sp.gui_zoom, 1.0f); // zoom in a bit
 
     // GL settings
     glEnable(GL_BLEND);
@@ -30,10 +30,10 @@ void Canvas::draw() {
     glClear(GL_COLOR_BUFFER_BIT);         // Clear the color buffer (background)
 
     // Draw robots
-    for (int i = 0; i < sim.sp.num_agents; i++) {
-        // Pose agent_pose = sim.agents[i]->get_pos();
+    for (int i = 0; i < sim->sp.num_agents; i++) {
+        // Pose agent_pose = sim->agents[i]->get_pos();
         glPushMatrix(); // enter local agent coordinates
-        pose_shift(sim.agents[i]->get_pos());
+        pose_shift(sim->agents[i]->get_pos());
 
             // draw disk at robot position
             glColor4f(.5, .5, .5, .8); // gray
@@ -46,15 +46,15 @@ void Canvas::draw() {
             glColor4f(0, 0, 1, 0.3); // blue
             GLUquadric *fov = gluNewQuadric();
             gluQuadricDrawStyle(fov, GLU_FILL);
-            gluPartialDisk(fov, 0, sim.sp.sensing_range, 20, 1,
-                        rtod(M_PI / 2.0 + sim.sp.sensing_angle / 2.0), // start angle
-                        rtod(-sim.sp.sensing_angle)); // sweep angle
+            gluPartialDisk(fov, 0, sim->sp.sensing_range, 20, 1,
+                        rtod(M_PI / 2.0 + sim->sp.sensing_angle / 2.0), // start angle
+                        rtod(-sim->sp.sensing_angle)); // sweep angle
             gluDeleteQuadric(fov);
         glPopMatrix();
 
         // draw small point at robot goal
         glPushMatrix(); 
-            pose_shift(sim.agents[i]->goal_pos);
+            pose_shift(sim->agents[i]->goal_pos);
                 glColor4f(1, 0, 1, .8); // magenta
                 GLUquadric *goal = gluNewQuadric();
                 gluQuadricDrawStyle(goal, GLU_FILL);
@@ -63,7 +63,7 @@ void Canvas::draw() {
         glPopMatrix();
 
         // update simulation
-        if (!paused) { sim.update(); }
+        if (!paused) { sim->update(); }
     }
 
     // // // Swap buffers to display the rendered content
@@ -77,11 +77,11 @@ void Canvas::draw() {
 void Canvas::TimerCallback(void* userdata) {
     Canvas* this_canvas = (Canvas*)userdata;
     this_canvas->redraw();
-    Fl::repeat_timeout(this_canvas->sim.sp.dt / this_canvas->sim.sp.gui_speedup, TimerCallback, userdata);  // Adjust the interval as needed
+    Fl::repeat_timeout(this_canvas->sim->sp.dt / this_canvas->sim->sp.gui_speedup, TimerCallback, userdata);  // Adjust the interval as needed
 }
 
 void Canvas::startAnimation() {
-    Fl::add_timeout(sim.sp.dt / sim.sp.gui_speedup, TimerCallback, this);  // Start the animation loop
+    Fl::add_timeout(sim->sp.dt / sim->sp.gui_speedup, TimerCallback, this);  // Start the animation loop
 }
 
 int Canvas::handle(int event) {

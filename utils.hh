@@ -197,10 +197,10 @@ inline cone_result in_vision_cone(Pose agent_pos, Pose nbr_pos, meters_t my_sens
 // Computes sensing information
 class SimulationData {
     public: 
-        SimulationData(sim_params sim_params);
+        SimulationData(sim_params *sim_params);
         ~SimulationData();
 
-        sim_params sp;
+        sim_params *sp;
         double sim_time;
         std::vector <Pose *> positions; // ordered by Agent id
 

@@ -2,11 +2,11 @@
 #include "agents.hh"
 
 // Constructor
-SimulationData::SimulationData(sim_params sim_params) {
+SimulationData::SimulationData(sim_params *sim_params) {
     sp = sim_params;
 
     // Set up Pose pointers
-    for (int i = 0; i < sp.num_agents; i++) {
+    for (int i = 0; i < sp->num_agents; i++) {
         positions.push_back(new Pose());
     }
 
@@ -44,7 +44,7 @@ bool SimulationData::lty::operator()(const Agent *a, const Agent *b) const
 // update fields
 void SimulationData::update(std::vector <Agent *> agents) {
     // update simulation time
-    sim_time += sp.dt;
+    sim_time += sp->dt;
 
     // update sorted agent positions
     agents_byx.clear();
@@ -70,8 +70,8 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
     // Agent edge(-1, sp, this, &dummy_pose); // dummy model used to find bounds in the sets
 
     // Pose gp = agent_pos;
-    // edge.set_pos(Pose(gp.x - sp.sensing_range, gp.y, 0, 0)); // LEFT
-    // std::set<Agent *, SimulationData::ltx>::iterator xmin = agents_byx.lower_bound(&edge);
+    // sp->.set_pos(Pose(gp.x - sp->sensing_range, gp.y, 0, 0)); // LEFT
+    // std::set<Agent *, SimulationData::ltx>::iterator xmin = agents_byx.lower_bound(&sp->);
     // // Agent *xminAgent = *xmin;
     // if(xmin == agents_byx.end()) {
     //     printf("left-filtered set empty for agent %i \n", agent_id);
@@ -85,7 +85,7 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
 
 
     // first, find a smaller collection of nearby neighbors
-    double rng = sp.sensing_range;
+    double rng = sp->sensing_range;
     Pose gp = agent_pos;
     Pose dummy_pose;
     Agent edge(-1, sp, this, &dummy_pose); // dummy model used to find bounds in the sets
@@ -150,7 +150,7 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
         Pose nbr_pos = nearby[i]->get_pos();
         int nbr_id = nearby[i]->id;
 
-        cone_result cr = in_vision_cone(agent_pos, nbr_pos, sp.sensing_range, sp.sensing_angle);
+        cone_result cr = in_vision_cone(agent_pos, nbr_pos, sp->sensing_range, sp->sensing_angle);
         if (cr.in_cone && agent_id != nbr_id) {
             sensor_result new_result;
             new_result.dist_away = cr.dist_away;
@@ -165,9 +165,9 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
 
 
     // working but slow code
-    // for (int i = 0; i < sp.num_agents; i++) {
+    // for (int i = 0; i < sp->num_agents; i++) {
     //     Pose nbr_pos = *positions[i];
-    //     cone_result cr = in_vision_cone(agent_pos, nbr_pos, sp.sensing_range, sp.sensing_angle);
+    //     cone_result cr = in_vision_cone(agent_pos, nbr_pos, sp->sensing_range, sp->sensing_angle);
     //     if (cr.in_cone && agent_id != i) {
     //         sensor_result new_result;
     //         new_result.dist_away = cr.dist_away;

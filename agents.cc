@@ -1,13 +1,9 @@
 #include "agents.hh"
 
 // Constructor
-Agent::Agent(int agent_id, sim_params sim_params, SimulationData *sim_data, Pose *cur_pos_ptr) {
+Agent::Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data, Pose *cur_pos_ptr) {
     sp = sim_params;
-    sd = sim_data;
-    // if(agent_id > -1) {
-    //     std::cout << "init agent: " << sd << std::endl;
-    // }
-    
+    sd = sim_data;    
     id = agent_id;
     cur_pos = cur_pos_ptr; // cur_pos now points to the same location as cur_pos_ptr
     reset();
@@ -27,13 +23,13 @@ Pose Agent::random_goal()
     double rand_a = 2 * M_PI * (Random::get_unif_double(0, 1) - .5);
 
     while (!done) {
-        rand_x = sp.r_upper * 2 * (Random::get_unif_double(0, 1) - .5);
-        rand_y = sp.r_upper * 2 * (Random::get_unif_double(0, 1) - .5);
+        rand_x = sp->r_upper * 2 * (Random::get_unif_double(0, 1) - .5);
+        rand_y = sp->r_upper * 2 * (Random::get_unif_double(0, 1) - .5);
         double dist = Pose(rand_x, rand_y, 0, 0).Distance(Pose(0,0,0,0));
-        if (!sp.circle_arena || (dist <= sp.r_upper && dist >= sp.r_lower)) { done = 1; }
+        if (!sp->circle_arena || (dist <= sp->r_upper && dist >= sp->r_lower)) { done = 1; }
     }
 
-    if (sp.verbose) {
+    if (sp->verbose) {
     printf("Random Pose (x, y, angle) generated for agent %i is [%.2f %.2f %.2f] \n", id, rand_x, rand_y, rand_a);
     }    
 
@@ -42,7 +38,7 @@ Pose Agent::random_goal()
 
 // initialize robot's start and goal positions
 void Agent::gen_start_goal_positions() {
-    if (sp.verbose) {
+    if (sp->verbose) {
     printf("\nGenerating start and goal for robot %i... \n", id);
     }
 
@@ -75,26 +71,26 @@ void Agent::goal_updates() {
 //// Use sensor information to update motion (turning and forward speed)
 void Agent::sensing_update() {
     // first, check if robot has reached its goal and update variables accordingly
-    if (get_pos().Distance(goal_pos) < sp.goal_tolerance) {
+    if (get_pos().Distance(goal_pos) < sp->goal_tolerance) {
         goal_updates();
     }
 
-    std::vector <sensor_result> sensed = sd->sense(id, get_pos(), sp.sensing_range, sp.sensing_angle);
+    std::vector <sensor_result> sensed = sd->sense(id, get_pos(), sp->sensing_range, sp->sensing_angle);
     stop = sensed.size() > 0; // agent will stop if any neighbor was sensed in vision cone
 
     travel_angle = angle_to_goal();
     
-    fwd_speed = stop ? 0 : sp.cruisespeed;
+    fwd_speed = stop ? 0 : sp->cruisespeed;
 
     // for instantaneous turning, set robot to travel angle
-    if (sp.turnspeed == -1) {
+    if (sp->turnspeed == -1) {
       set_pos(Pose(cur_pos->x, cur_pos->y, cur_pos->z, travel_angle));
       turn_speed = 0;
     }
     // for non-instantaneous turning, set turnspeed
     else {
         double a_error = normalize(travel_angle - cur_pos->a);
-        turn_speed = sp.turnspeed * a_error;
+        turn_speed = sp->turnspeed * a_error;
     }
 
 }
@@ -112,15 +108,15 @@ Pose Agent::get_pos() const {
 //// Update robot position
 void Agent::position_update() {
     // find the change of pose due to our forward and turning motions
-    const Pose dp(fwd_speed * sp.dt, 0, 0, normalize(turn_speed * sp.dt));
+    const Pose dp(fwd_speed * sp->dt, 0, 0, normalize(turn_speed * sp->dt));
 
     // the pose we're trying to achieve
     Pose newpose(*cur_pos + dp);
     set_pos(newpose);
 
     // update location if world is periodic and robot is now out of bounds
-    if (sp.periodic) {
-        double s = 2 * sp.r_upper;
+    if (sp->periodic) {
+        double s = 2 * sp->r_upper;
 
         if (cur_pos->x < -s/2 || cur_pos->x > s/2 || cur_pos->y < -s/2 || cur_pos->y > s/2) { // if out of bounds
         double x = fmod(cur_pos->x + s/2, s) - s/2;
@@ -133,13 +129,13 @@ void Agent::position_update() {
 //// Get (global) angle robot should move in to head straight to goal
 double Agent::angle_to_goal() {
       Pose goal_pos_helper; // will be true goal pos if world is not periodic
-      if (!sp.periodic) {
+      if (!sp->periodic) {
         goal_pos_helper = goal_pos;
       }
 
       // if space is periodic, figure out where robot should move to for shortest path to goal
       else {
-        double s = 2 * sp.r_upper;
+        double s = 2 * sp->r_upper;
         double xs [9] = {-s, -s, -s, 0, 0, 0, s, s, s};
         double ys [9] = {-s, 0, s, -s, 0, s, -s, 0, s};
         int closest_pos = 0;
