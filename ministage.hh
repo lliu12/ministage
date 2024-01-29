@@ -1,16 +1,8 @@
 #ifndef MINISTAGE_H
 #define MINISTAGE_H
 
-/** \file ministage.hh
- *  Desc: Header file for the MiniStage library
- */
-
-// C++ Libraries
 // #include <algorithm>
 #include <cmath>
-// #include <list>
-// #include <map>
-// #include <queue>
 #include <set>
 #include <vector>
 #include <fstream>

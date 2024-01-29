@@ -6,6 +6,13 @@
 #include <vector>
 #include <set>
 #include "random.hh"
+
+#ifdef __APPLE__
+#include <OpenGL/glu.h>
+#else
+#include <GL/glu.h>
+#endif
+
 class Agent;
 
 
@@ -41,13 +48,14 @@ typedef struct {
     // for noisy walk
     float anglenoise;
     float anglebias;
-    int runsteps;
+    int avg_runsteps;
     bool randomize_runsteps;
     float turnspeed; 
 
     // for gui
     float gui_speedup;
     int gui_zoom;
+    bool gui_ind_colors; // todo
 
 } sim_params;
 
@@ -86,9 +94,6 @@ inline double dtor(double d)
 {
   return (d * M_PI / 180.0);
 }
-
-
-
 
 
 
@@ -164,6 +169,25 @@ class Pose {
     meters_t Distance(const Pose &other) const { return hypot(x - other.x, y - other.y); }
 };
 
+
+// utility functions for drawing & converting coordinates
+inline void coord_shift(double x, double y, double z, double a) {
+    glTranslatef(x, y, z);
+    glRotatef(rtod(a), 0, 0, 1);
+}
+
+inline void pose_shift(const Pose &pose) {
+    coord_shift(pose.x, pose.y, pose.z, pose.a);
+}
+
+inline void pose_inverse_shift(const Pose &pose) {
+    coord_shift(0, 0, 0, -pose.a);
+    coord_shift(-pose.x, -pose.y, -pose.z, 0);
+}
+
+
+
+
 typedef struct {
     int id; // id of sensed neighbor
     meters_t dist_away;
@@ -202,7 +226,7 @@ class SimulationData {
 
         sim_params *sp;
         double sim_time;
-        // std::vector <Pose *> positions; // ordered by Agent id
+        bool all_stopped; 
 
         void update(std::vector <Agent *> agents);
 

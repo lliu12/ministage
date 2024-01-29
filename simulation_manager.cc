@@ -7,11 +7,11 @@ SimulationManager::SimulationManager(sim_params sim_params) {
 
     // Create agents vector and pass copies to SimulationData
     for (int i = 0; i < sp.num_agents; i++) {
-        agents.push_back(new Agent(i, &sp, sd));
+        agents.push_back(new NoiseAgent(i, &sp, sd));
     }
     sd->agents_byx_vec = agents;
     sd->agents_byy_vec = agents;
-
+    sd->reset();
 }
 
 // Destructor
@@ -19,6 +19,8 @@ SimulationManager::~SimulationManager(void){}
 
 
 void SimulationManager::update() {
+    // save data here before any updates occur
+
     // update simtime and the sorted agent info in simulationdata
     sd->update(agents);
 
@@ -32,8 +34,9 @@ void SimulationManager::update() {
 
 
 void SimulationManager::reset() {
-    sd->reset(); // needs to happen first so that sim_time gets reset to 0
+    sd->sim_time = 0; // since agents store this time as goal_birth_time
     for (Agent *a : agents) { a->reset(); }
+    sd->reset(); // new randomized poses are out of order... sort them again!
 }
 
 

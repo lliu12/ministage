@@ -30,41 +30,14 @@ void Canvas::draw() {
     glClear(GL_COLOR_BUFFER_BIT);         // Clear the color buffer (background)
 
     // Draw robots
-    for (int i = 0; i < sim->sp.num_agents; i++) {
-        // Pose agent_pose = sim->agents[i]->get_pos();
-        glPushMatrix(); // enter local agent coordinates
-        pose_shift(sim->agents[i]->get_pos());
+    for (Agent *a : sim->agents) {
+        a->draw();
 
-            // draw disk at robot position
-            glColor4f(.5, .5, .5, .8); // gray
-            GLUquadric *robot_pos = gluNewQuadric();
-            gluQuadricDrawStyle(robot_pos, GLU_FILL);
-            gluDisk(robot_pos, 0, 0.3, 20, 1);
-            gluDeleteQuadric(robot_pos);
 
-            // draw wedge for robot FOV
-            glColor4f(0, 0, 1, 0.2); // blue
-            GLUquadric *fov = gluNewQuadric();
-            gluQuadricDrawStyle(fov, GLU_FILL);
-            gluPartialDisk(fov, 0, sim->sp.sensing_range, 20, 1,
-                        rtod(M_PI / 2.0 + sim->sp.sensing_angle / 2.0), // start angle
-                        rtod(-sim->sp.sensing_angle)); // sweep angle
-            gluDeleteQuadric(fov);
-        glPopMatrix();
-
-        // draw small point at robot goal
-        glPushMatrix(); 
-            pose_shift(sim->agents[i]->goal_pos);
-                glColor4f(1, 0, 1, .8); // magenta
-                GLUquadric *goal = gluNewQuadric();
-                gluQuadricDrawStyle(goal, GLU_FILL);
-                gluDisk(goal, 0, 0.2, 20, 1);
-                gluDeleteQuadric(goal);
-        glPopMatrix();
-
-        // update simulation
-        if (!paused) { sim->update(); }
     }
+
+    // update simulation
+    if (!paused) { sim->update(); }
 
     // // // Swap buffers to display the rendered content
     // glFlush();

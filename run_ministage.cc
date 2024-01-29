@@ -4,6 +4,10 @@
 #include "canvas.hh"
 
 
+const char* redText = "\033[1;31m";
+const char* resetText = "\033[0m";
+#define IS_TRUE(x) { if (!(x)) std::cout << redText << __FUNCTION__ << " FAILED on line " << __LINE__ << resetText << std::endl; }
+
 int main(int argc, char* argv[])
 {
     // Tests that MiniStage is working as expected
@@ -15,15 +19,17 @@ int main(int argc, char* argv[])
     sp.r_upper = 8;
     sp.r_lower = 0;
     sp.verbose = false;
-    sp.anglenoise = 0;
+    sp.anglenoise = 1.5;
     sp.anglebias = 0;
-    sp.sensing_angle = M_PI / 2.0; // maybe switch everything to work just in degrees????
+    sp.avg_runsteps = 40;
+    sp.randomize_runsteps = true;
+    sp.sensing_angle = M_PI * 3.0 / 4.0; // maybe switch everything to work just in degrees????
     sp.sensing_range = 1;
     sp.cruisespeed = 0.6;
-    sp.turnspeed = 0.8;
+    sp.turnspeed = 3;
     sp.goal_tolerance = 0.4;
     sp.dt = .1;
-    sp.gui_speedup = 1; // speed up gui compared to real time
+    sp.gui_speedup = 5; // speed up gui compared to real time
     // sp.gui_draw_every = 5; // update gui every x updates
     sp.gui_zoom = 20; // zoom in on gui
 
@@ -33,7 +39,6 @@ int main(int argc, char* argv[])
 
    // Run sanity checks
    // If parameter is not true, test fails
-    #define IS_TRUE(x) { if (!(x)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; }
 
     std::cout << "Checking in_vision_cone function..." << std::endl;
     {
@@ -72,11 +77,10 @@ int main(int argc, char* argv[])
 
     printf("Testing nearest neighbor search...\n");
     {
+        sim.reset();
         for (int k = 0; k<5; k++) {
 
-            sim.sd->update(sim.agents);
-
-            printf("Testing fiducial sorting...\n");
+            printf("Testing fiducial sorting (step k = %i)...\n", k);
             // bool sorted = sim.sd->vecs_sorted();
             Agent *begin_agent = *sim.sd->agents_byx_vec.begin();
             double last_x = begin_agent->get_pos().x;
@@ -86,7 +90,7 @@ int main(int argc, char* argv[])
                 // a->get_pos().Print("Sorted agents by x: ");
             }
 
-            printf("Testing narrowing down nearby neighbors...\n");
+            printf("Testing narrowing down nearby neighbors (step k = %i)...\n", k);
             Agent edge(-1, &sp, sim.sd); // dummy model used to find bounds in the sets
 
             for (Agent *a : sim.agents) {
@@ -100,6 +104,9 @@ int main(int argc, char* argv[])
                 IS_TRUE(xmin != sim.sd->agents_byx_vec.end());
                 // xminAgent->cur_pos->Print("");
             }
+
+            sim.update();
+            sim.sd->update(sim.agents);
         }
     }
 

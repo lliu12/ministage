@@ -12,8 +12,10 @@ SimulationData::~SimulationData(){}
 
 // Reset
 void SimulationData::reset() {
+    all_stopped = false;
     sim_time = 0;
-    // don't need to clear the byx, byy vectors because they store agent pointers and the agents reset themselves
+    std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
+    std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
 }
 
 
@@ -36,12 +38,35 @@ bool SimulationData::lty::operator()(const Agent *a, const Agent *b) const
 
 // update fields
 void SimulationData::update(std::vector <Agent *> agents) {
+    // small optimization: if everyone was blocked last step, no need to re-sort
+    bool all_blocked_helper = true;
+    for (Agent *a : agents_byx_vec) 
+    { 
+        if (a->fwd_speed != 0) {
+            all_blocked_helper = false;
+            break;
+        }
+    }
+
+    if (!all_blocked_helper || sim_time == 0) {
+        std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
+        std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
+    }
+    else {
+        // print out first timestep everyone is blocked, 
+        // but note that the system could become unblocked again due to in-place rotations
+        if (!all_stopped) {
+            // printf("everyone is blocked at time %f\n", sim_time);
+        }
+        all_stopped = true;
+    }
+
+    // // update for vectors
+    // std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
+    // std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
+
     // update simulation time
     sim_time += sp->dt;
-
-    // update for vectors
-    std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
-    std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
 }
 
 
@@ -50,6 +75,7 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
     std::vector <sensor_result> result;
 
     // std::cout << "\nTesting fiducial sorting in sensor function..." << std::endl;
+    // vecs_sorted();
 
     // find nearby neighbors with vectors
     // first, find a smaller collection of nearby neighbors

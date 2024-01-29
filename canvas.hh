@@ -45,20 +45,6 @@ class Canvas : public Fl_Gl_Window {
 
 };
 
-// utility functions for drawing & converting coordinates
-inline void coord_shift(double x, double y, double z, double a) {
-    glTranslatef(x, y, z);
-    glRotatef(rtod(a), 0, 0, 1);
-}
-
-inline void pose_shift(const Pose &pose) {
-    coord_shift(pose.x, pose.y, pose.z, pose.a);
-}
-
-inline void pose_inverse_shift(const Pose &pose) {
-    coord_shift(0, 0, 0, -pose.a);
-    coord_shift(-pose.x, -pose.y, -pose.z, 0);
-}
 
 
 
