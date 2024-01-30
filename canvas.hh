@@ -1,4 +1,4 @@
-#include "ministage.hh"
+#include "simulation_manager.hh"
 
 // FLTK Gui includes
 #include <FL/Fl.H>

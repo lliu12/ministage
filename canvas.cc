@@ -32,7 +32,12 @@ void Canvas::draw() {
     // Draw robots
     for (Agent *a : sim->agents) {
         a->draw();
+    }
 
+    for (const auto& row : sim->sd->cells) {
+        for (Cell *c : row) {
+            c->draw();
+        }
 
     }
 

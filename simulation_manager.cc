@@ -1,4 +1,4 @@
-#include "ministage.hh"
+#include "simulation_manager.hh"
 
 // Constructor
 SimulationManager::SimulationManager(sim_params sim_params) {

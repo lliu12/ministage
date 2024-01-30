@@ -7,11 +7,16 @@
 #include <set>
 #include "random.hh"
 
+// FLTK Gui includes
+#include <FL/fl_draw.H>
+#include <FL/gl.h> // FLTK takes care of platform-specific GL stuff
+// except GLU
 #ifdef __APPLE__
 #include <OpenGL/glu.h>
 #else
 #include <GL/glu.h>
 #endif
+
 
 class Agent;
 
@@ -30,7 +35,13 @@ typedef struct {
     bool circle_arena; /// if false, arena is square shaped
     meters_t r_upper; /// outer radius for circle, sidelength / 2 for square
     meters_t r_lower; /// inner radius for goals generated on a 2D ring
-    meters_t periodic_bounds; ///< x and y axis value where periodic bounds are enforced
+    // meters_t periodic_bounds; ///< x and y axis value where periodic bounds are enforced = r_upper
+
+    // neighbor search settings
+    int cells_per_side; // split the (r_upper)^2 square region into (cells_per_side)^2 cells for tracking agents in
+    bool use_sorted_agents, use_cell_lists;
+    float cell_width;
+
 
     meters_t model_init_mindist; ///< distance to perturb models away from each other when using AdjustModelPositions function
     int model_init_iters; ///< maximum iterations when using AdjustModelPositions function
@@ -55,7 +66,7 @@ typedef struct {
     // for gui
     float gui_speedup;
     int gui_zoom;
-    bool gui_ind_colors; // todo
+    // bool gui_ind_colors; // todo
 
 } sim_params;
 
@@ -170,6 +181,7 @@ class Pose {
 };
 
 
+
 // utility functions for drawing & converting coordinates
 inline void coord_shift(double x, double y, double z, double a) {
     glTranslatef(x, y, z);
@@ -185,6 +197,53 @@ inline void pose_inverse_shift(const Pose &pose) {
     coord_shift(-pose.x, -pose.y, -pose.z, 0);
 }
 
+
+
+// Cell class
+// Used in cell lists for identifying neighbors
+class Cell {
+    public:
+    Cell(float x_min, float x_max, float y_min, float y_max) {
+        xmin = x_min;
+        xmax = x_max;
+        ymin = y_min;
+        ymax = y_max;
+    }
+
+    ~Cell(){}
+
+    // int row, col; // index cell's position in overall cell vector (although... does the cell need to know this?)
+    float xmin, xmax, ymin, ymax; // bounds of the space enclosed by cell
+    bool is_outer_cell; 
+    std::vector<Agent *> occupants; // agents in this cell
+    std::vector<Cell *> neighbors; // neighboring cells
+
+
+    // check if a pose is in cell
+    // a cell includes its bottom/left sides and excludes its top/right sides
+    bool in_cell(Pose p) 
+    {
+        bool x_in_cell = xmin <= p.x && p.x < xmax;
+        bool y_in_cell = ymin <= p.y && p.y < ymax;
+        return x_in_cell && y_in_cell;
+    }
+
+    // reset cell between trials
+    void reset() {
+        occupants.clear();
+    }
+
+    // draw on canvas
+    void draw() {
+        glBegin(GL_LINE_LOOP);              // Each set of 4 vertices form a quad
+        glColor4f(0.0f, 1.0f, 0.0f, 0.1); // Green
+        glVertex2f(xmin, ymin);    // x, y
+        glVertex2f(xmax, ymin);
+        glVertex2f(xmax, ymax);
+        glVertex2f(xmin, ymax);
+        glEnd();
+    }
+};
 
 
 
@@ -247,10 +306,14 @@ class SimulationData {
         /** maintain a vector of agents sorted by pose.y, for quickly finding neighbors */
         std::vector<Agent *> agents_byy_vec;
 
+        // 2D vector of cells
+        std::vector<std::vector<Cell *>> cells;
+
         // check if the byx, byy vecs are properly sorted
         bool vecs_sorted();
 
 };
+
 
 
 #endif

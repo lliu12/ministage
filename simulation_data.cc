@@ -2,9 +2,28 @@
 #include "agents.hh"
 
 // Constructor
-SimulationData::SimulationData(sim_params *sim_params) {
+SimulationData::SimulationData(sim_params *sim_params) 
+    : cells(sim_params->cells_per_side, std::vector<Cell *>(sim_params->cells_per_side))
+{
     sp = sim_params;
     sim_time = 0;
+
+    // populate cell lists
+    if (sp->use_cell_lists) {
+        float cur_x = -1.0 * sp->r_upper;
+
+        for (int r = 0; r < sp->cells_per_side; r++) {
+            // cells.push_back(std::vector<Cell *>);
+            float cur_y = -1.0 * sp->r_upper;
+
+            for (int c = 0; c < sp->cells_per_side; c++) {
+                cells[r][c] = new Cell(cur_x, cur_x + sp->cell_width, cur_y, cur_y + sp->cell_width);
+                cur_y += sp->cell_width;
+            }
+
+            cur_x += sp->cell_width;
+        }
+    }
 }
 
 // Destructor
@@ -14,8 +33,17 @@ SimulationData::~SimulationData(){}
 void SimulationData::reset() {
     all_stopped = false;
     sim_time = 0;
-    std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
-    std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
+
+    // ensure agent lists are sorted
+    if (sp->use_sorted_agents) {
+        std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
+        std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
+    }
+
+    // // populate cell lists
+    // if (sp->use_cell_lists) {
+
+    // }
 }
 
 
@@ -49,8 +77,10 @@ void SimulationData::update(std::vector <Agent *> agents) {
     }
 
     if (!all_blocked_helper || sim_time == 0) {
-        std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
-        std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
+        if (sp->use_sorted_agents) {
+            std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
+            std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
+        }
     }
     else {
         // print out first timestep everyone is blocked, 
@@ -60,10 +90,6 @@ void SimulationData::update(std::vector <Agent *> agents) {
         }
         all_stopped = true;
     }
-
-    // // update for vectors
-    // std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
-    // std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
 
     // update simulation time
     sim_time += sp->dt;

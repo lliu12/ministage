@@ -214,7 +214,7 @@ void GoalAgent::draw() {
             glColor4f(1, 0, 1, .8); // magenta
             GLUquadric *goal = gluNewQuadric();
             gluQuadricDrawStyle(goal, GLU_FILL);
-            gluDisk(goal, 0, 0.2, 20, 1);
+            gluDisk(goal, 0, 0.12, 20, 1);
             gluDeleteQuadric(goal);
     glPopMatrix();
 }
@@ -284,8 +284,6 @@ void NoiseAgent::sensing_update() {
             set_pos(Pose(cur_pos.x, cur_pos.y, cur_pos.z, travel_angle));
             turn_speed = 0;
         }
-
-
     }
 
     fwd_speed = (stop ? 0 : sp->cruisespeed);

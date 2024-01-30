@@ -1,6 +1,6 @@
 // This is a more lightweight, customized version of RTV's Stage simulation.
 #include <chrono>
-#include "ministage.hh"
+#include "simulation_manager.hh"
 #include "canvas.hh"
 
 
@@ -13,25 +13,40 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 128;
+    sp.num_agents = 100;
+
     sp.periodic = false;
     sp.circle_arena = false;
     sp.r_upper = 8;
     sp.r_lower = 0;
-    sp.verbose = false;
+
+    sp.cells_per_side = 15;
+    sp.use_sorted_agents = true;
+    sp.use_cell_lists = true;
+    sp.cell_width = 2.0 * sp.r_upper / sp.cells_per_side;
+    
     sp.anglenoise = 1.5;
     sp.anglebias = 0;
+
     sp.avg_runsteps = 40;
     sp.randomize_runsteps = true;
-    sp.sensing_angle = M_PI * 3.0 / 4.0; // maybe switch everything to work just in degrees????
+
+    sp.sensing_angle = M_PI * 3.0 / 4.0;
     sp.sensing_range = 1;
+
     sp.cruisespeed = 0.6;
     sp.turnspeed = 3;
-    sp.goal_tolerance = 0.4;
+    sp.goal_tolerance = 0.3;
+
     sp.dt = .1;
+
     sp.gui_speedup = 5; // speed up gui compared to real time
     // sp.gui_draw_every = 5; // update gui every x updates
     sp.gui_zoom = 20; // zoom in on gui
+
+    sp.verbose = false;
+
+    IS_TRUE(2 * sp.r_upper / sp.cells_per_side > sp.sensing_range);
 
     SimulationManager sim = SimulationManager(sp);
 
@@ -110,7 +125,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    if(1) {
+    if(0) {
         // try running a trial
         printf("Try running a trial...\n");
         auto start_time = std::chrono::high_resolution_clock::now();
