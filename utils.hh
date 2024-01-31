@@ -320,8 +320,11 @@ class SimulationData {
 
         void reset();
 
-        // // Find nearby agents to a given position
-        // std::vector<Agent *> find_nearby(Pose *agent_pos);
+        // Find nearby agents to a given position
+        std::vector<Agent *> find_nearby_sorted_agents(Pose *agent_pos);
+
+        // Find nearby agents to a given position
+        std::vector<Agent *> find_nearby_cell_lists(Pose *agent_pos);
 
         // Return what this agent would sense
         std::vector <sensor_result> sense(int agent_id, Pose agent_pos, meters_t sensing_range, radians_t sensing_angle);

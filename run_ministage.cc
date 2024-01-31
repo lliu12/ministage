@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 5;
+    sp.num_agents = 128;
 
     sp.periodic = false;
     sp.circle_arena = false;
@@ -26,10 +26,10 @@ int main(int argc, char* argv[])
     sp.cells_range = 10;
     sp.cells_per_side = floor(2.0 * sp.cells_range / sp.sensing_range); // 15;
     sp.cell_width = 2.0 * sp.cells_range / sp.cells_per_side;
-    sp.use_sorted_agents = true;
+    sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
     
-    sp.anglenoise = 0.5;
+    sp.anglenoise = 1.5;
     sp.anglebias = 0;
 
     sp.avg_runsteps = 40;
@@ -93,6 +93,7 @@ int main(int argc, char* argv[])
     }
 
     printf("Testing position sort neighbor-finding...\n");
+    if (sp.use_sorted_agents)
     {
         sim.reset();
         for (int k = 0; k<5; k++) {
@@ -132,23 +133,27 @@ int main(int argc, char* argv[])
 
 
     printf("Testing cell list neighbor-finding...\n");
+    if (sp.use_cell_lists)
     {
-        // sim.reset();
+        sim.reset();
 
         printf("Testing cell construction...\n");
-        for (int idx = 0; idx < sp.cells_per_side; idx++) {
-            for (int idy = 0; idy < sp.cells_per_side; idy++) {
-                if (!sim.sd->cells[idx][idy]->is_outer_cell) {
-                    IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 8); // inner cells should have 8 neighbors
-                }
-                else if ((idx != 0 && idx < sp.cells_per_side - 1) || (idy != 0 && idy < sp.cells_per_side - 1)) {
-                    IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 6); // outer non-corner cells should have 6 neighbors (5 + overflow cell)
-                }
-                else {
-                    IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 4); // corner cells should have 4 neighbors (3 + overflow cell)
+        if (!sp.periodic) {
+            for (int idx = 0; idx < sp.cells_per_side; idx++) {
+                for (int idy = 0; idy < sp.cells_per_side; idy++) {
+                    if (!sim.sd->cells[idx][idy]->is_outer_cell) {
+                        IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 8); // inner cells should have 8 neighbors
+                    }
+                    else if ((idx != 0 && idx < sp.cells_per_side - 1) || (idy != 0 && idy < sp.cells_per_side - 1)) {
+                        IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 6); // outer non-corner cells should have 6 neighbors (5 + overflow cell)
+                    }
+                    else {
+                        IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 4); // corner cells should have 4 neighbors (3 + overflow cell)
+                    }
                 }
             }
         }
+
 
         // printf("Testing get cell for pos function...\n");
         // printf("cell width: %f", sp.cell_width);
@@ -157,7 +162,7 @@ int main(int argc, char* argv[])
 
     }
 
-    if(0) {
+    if(1) {
         // try running a trial
         printf("Try running a trial...\n");
         auto start_time = std::chrono::high_resolution_clock::now();

@@ -258,6 +258,8 @@ void NoiseAgent::sensing_update() {
 
     std::vector <sensor_result> sensed = sd->sense(id, get_pos(), sp->sensing_range, sp->sensing_angle);
     stop = sensed.size() > 0; // agent will stop if any neighbor was sensed in vision cone
+    // if (stop) {printf("Agent %i stopping \n",id);}
+    // printf("Agent in view: %i \n", stop);
 
     // check if current run phase is over
     if (current_phase_count >= runsteps) {

@@ -56,7 +56,7 @@ bool SimulationData::lty::operator()(const Agent *a, const Agent *b) const
 void SimulationData::update() {
     // small optimization: if everyone was blocked last step, no need to re-sort
     bool all_blocked_helper = true;
-    for (Agent *a : agents_byx_vec) 
+    for (Agent *a : agents) 
     { 
         if (a->fwd_speed != 0) {
             all_blocked_helper = false;
@@ -64,6 +64,7 @@ void SimulationData::update() {
         }
     }
 
+    // if anyone has moved, or the sim has just begun, proceed with the full update
     if (!all_blocked_helper || sim_time == 0) {
         // sort the position lists
         if (sp->use_sorted_agents) {
@@ -80,8 +81,8 @@ void SimulationData::update() {
     else {
         // print out first timestep everyone is blocked, 
         // but note that the system could become unblocked again due to in-place rotations
-        if (!all_stopped) {
-            // printf("everyone is blocked at time %f\n", sim_time);
+        if (sp->verbose && !all_stopped) {
+            printf("everyone is blocked at time %f\n", sim_time);
         }
         all_stopped = true;
     }
@@ -96,6 +97,7 @@ void SimulationData::populate_cell_lists() {
             c->occupants.clear();
         }
     }
+    overflow_cell->occupants.clear();
 
     // iterate through agents and make them occupants of the correct cell
     for (Agent *a : agents) 
@@ -194,64 +196,112 @@ void SimulationData::init_cell_lists() {
     }
 }
 
-// // Find nearby agents to a given position
-// std::vector<Agent *> SimulationData::find_nearby(Pose *agent_pos) {
-//     std::vector<Agent *> nearby;
+// Find nearby agents to a given position
+std::vector<Agent *> SimulationData::find_nearby_sorted_agents(Pose *agent_pos) {
+    std::vector<Agent *> nearby_sorted_agents;
+    
+    if (sp->use_sorted_agents) {
+        double rng = sp->sensing_range;
+        Pose *gp = agent_pos;
+        Agent edge(-1, sp, this); // dummy model used to find bounds in the sets
+        std::vector<Agent *>::iterator xmin, xmax, ymin, ymax;
 
-//     if (sp->use_sorted_agents) {
+        edge.set_pos(Pose(gp->x - rng, gp->y, 0, 0)); // LEFT
+        xmin = std::lower_bound(agents_byx_vec.begin(), agents_byx_vec.end(), &edge, ltx());
 
-//     }
+        edge.set_pos(Pose(gp->x + rng, gp->y, 0, 0)); // RIGHT
+        xmax = std::upper_bound(agents_byx_vec.begin(), agents_byx_vec.end(), &edge, ltx());
 
-//     // if (sp->use_cell_lists) {
+        edge.set_pos(Pose(gp->x, gp->y - rng, 0, 0)); // BOTTOM
+        ymin = std::lower_bound(agents_byy_vec.begin(), agents_byy_vec.end(), &edge, lty());
+
+        edge.set_pos(Pose(gp->x, gp->y + rng, 0, 0)); // TOP
+        ymax = std::upper_bound(agents_byy_vec.begin(), agents_byy_vec.end(), &edge, lty());
+
+        // put these models into sets keyed on pointer
+        std::set<Agent *> horiz, vert;
+
+        for (; xmin != xmax; ++xmin)
+            horiz.insert(*xmin);
+
+        for (; ymin != ymax; ++ymin)
+            vert.insert(*ymin);
+
+        // the intersection of the sets is all the fiducials close by
+        std::set_intersection(horiz.begin(), horiz.end(), vert.begin(), vert.end(), std::inserter(nearby_sorted_agents, nearby_sorted_agents.end()));
+    }
+
+    // if (sp->use_cell_lists) {
         
-//     // }
-// }
+    // }
+    return nearby_sorted_agents;
+}
+
+// Use cell lists instead
+std::vector<Agent *> SimulationData::find_nearby_cell_lists(Pose *agent_pos) {
+    std::vector<Agent *> nearby;
+
+    if (sp->use_cell_lists) {
+        Cell *my_cell = get_cell_for_pos(agent_pos);
+
+        // printf("neighbors to this cell: %zu \n", my_cell->neighbors.size());
+        
+        // put agents in my_cell and its neighbors into nearby
+        nearby.insert(nearby.end(), my_cell->occupants.begin(), my_cell->occupants.end());
+        for (Cell *nbr : my_cell->neighbors) {
+            // printf("in cell lists inserting neighbors... \n");
+            nearby.insert(nearby.end(), nbr->occupants.begin(), nbr->occupants.end());
+        }
+    }
+
+    return nearby;
+}
 
 
 // Return who an agent with id agent_id and Pose agent_pos would sense in its cone-shaped field of view
 std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, meters_t sensing_range, radians_t sensing_angle) {
     std::vector <sensor_result> result;
 
-    // std::cout << "\nTesting fiducial sorting in sensor function..." << std::endl;
-    // vecs_sorted();
+    // // test if the two sensing methods match
+    // std::vector<Agent *> nearby_sa = find_nearby_sorted_agents(&agent_pos);
+    // std::vector<Agent *> nearby_cl = find_nearby_cell_lists(&agent_pos);
+
+    // std::vector<Agent *> seen_sa;
+    // std::vector<Agent *> seen_cl;
+
+    // for (Agent *nbr : nearby_sa) { 
+    //     cone_result cr = in_vision_cone(agent_pos, nbr->get_pos(), sp->sensing_range, sp->sensing_angle);
+    //     if (cr.in_cone && agent_id != nbr->id) {
+    //         seen_sa.push_back(nbr);
+    //     }
+    // }
+
+
+    // for (Agent *nbr : nearby_cl) { 
+    //     cone_result cr = in_vision_cone(agent_pos, nbr->get_pos(), sp->sensing_range, sp->sensing_angle);
+    //     if (cr.in_cone && agent_id != nbr->id) {
+    //         seen_cl.push_back(nbr);
+    //     }
+    // }
+
+    // if(seen_sa.size() != seen_cl.size()) {
+    //     printf("Different number of agents sensed using sorted positions vs. cell lists! \n");
+    // }
+    // // else {
+    // //     printf("Sensing methods match. \n");
+    // // }
+
+
 
     // find nearby neighbors with vectors
     // first, find a smaller collection of nearby neighbors
-    double rng = sp->sensing_range;
-    Pose gp = agent_pos;
-    Agent edge(-1, sp, this); // dummy model used to find bounds in the sets
-    std::vector<Agent *>::iterator xmin, xmax, ymin, ymax;
-
-    edge.set_pos(Pose(gp.x - rng, gp.y, 0, 0)); // LEFT
-    xmin = std::lower_bound(agents_byx_vec.begin(), agents_byx_vec.end(), &edge, ltx());
-
-    edge.set_pos(Pose(gp.x + rng, gp.y, 0, 0)); // RIGHT
-    xmax = std::upper_bound(agents_byx_vec.begin(), agents_byx_vec.end(), &edge, ltx());
-
-    edge.set_pos(Pose(gp.x, gp.y - rng, 0, 0)); // BOTTOM
-    ymin = std::lower_bound(agents_byy_vec.begin(), agents_byy_vec.end(), &edge, lty());
-
-    edge.set_pos(Pose(gp.x, gp.y + rng, 0, 0)); // TOP
-    ymax = std::upper_bound(agents_byy_vec.begin(), agents_byy_vec.end(), &edge, lty());
-
-    // put these models into sets keyed on pointer
-    std::set<Agent *> horiz, vert;
-
-    for (; xmin != xmax; ++xmin)
-        horiz.insert(*xmin);
-
-    for (; ymin != ymax; ++ymin)
-        vert.insert(*ymin);
-
-    // the intersection of the sets is all the fiducials close by
-    std::vector<Agent *> nearby;
-    std::set_intersection(horiz.begin(), horiz.end(), vert.begin(), vert.end(), std::inserter(nearby, nearby.end()));
+    std::vector<Agent *> nearby = sp->use_cell_lists ? find_nearby_cell_lists(&agent_pos) : find_nearby_sorted_agents(&agent_pos);
+    // printf("Neighbors nearby: %zu \n", nearby.size());
 
     // now test more carefully for whether these neighbors are in agent's FOV
-    int num_nearby = nearby.size();
-    for (int i = 0; i < num_nearby; i++) {
-        Pose nbr_pos = nearby[i]->get_pos();
-        int nbr_id = nearby[i]->id;
+    for (Agent *nbr : nearby) {
+        Pose nbr_pos = nbr->get_pos();
+        int nbr_id = nbr->id;
 
         cone_result cr = in_vision_cone(agent_pos, nbr_pos, sp->sensing_range, sp->sensing_angle);
         if (cr.in_cone && agent_id != nbr_id) {
@@ -259,12 +309,14 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
             new_result.dist_away = cr.dist_away;
             new_result.id = nbr_id;
             result.push_back(new_result);
+            // printf("someone in vision cone for agent: %i\n", agent_id);
         }
     }
 
     return result;
 }
 
+// check that the position vectors are sorted
 bool SimulationData::vecs_sorted() {
     bool sorted = true;
 
