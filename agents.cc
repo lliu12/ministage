@@ -149,7 +149,7 @@ void GoalAgent::goal_updates() {
 void GoalAgent::sensing_update() {
 
     // first, check if robot has reached its goal and update variables accordingly
-    if (get_pos().Distance(goal_pos) < sp->goal_tolerance) {
+    if (cur_pos->Distance(goal_pos) < sp->goal_tolerance) {
         goal_updates();
     }
 

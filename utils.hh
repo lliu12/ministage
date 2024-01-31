@@ -33,14 +33,15 @@ typedef struct {
 
     bool periodic; ///< use periodic boundary conditions
     bool circle_arena; /// if false, arena is square shaped
-    meters_t r_upper; /// outer radius for circle, sidelength / 2 for square
+    meters_t r_upper; /// outer radius for circle, sidelength / 2 for square where goals are generated
     meters_t r_lower; /// inner radius for goals generated on a 2D ring
     // meters_t periodic_bounds; ///< x and y axis value where periodic bounds are enforced = r_upper
 
     // neighbor search settings
+    meters_t cells_range; // coordinate range covered by cells with side length < sensing range
     int cells_per_side; // split the (r_upper)^2 square region into (cells_per_side)^2 cells for tracking agents in
     bool use_sorted_agents, use_cell_lists;
-    float cell_width;
+    meters_t cell_width;
 
 
     meters_t model_init_mindist; ///< distance to perturb models away from each other when using AdjustModelPositions function
@@ -214,7 +215,8 @@ class Cell {
 
     // int row, col; // index cell's position in overall cell vector (although... does the cell need to know this?)
     float xmin, xmax, ymin, ymax; // bounds of the space enclosed by cell
-    bool is_outer_cell; 
+    bool is_overflow_cell; // cell outside the given arena bounds
+    bool is_outer_cell; // cell adjacent to the outside of the arena bounds
     std::vector<Agent *> occupants; // agents in this cell
     std::vector<Cell *> neighbors; // neighboring cells
 
@@ -223,8 +225,8 @@ class Cell {
     // a cell includes its bottom/left sides and excludes its top/right sides
     bool in_cell(Pose p) 
     {
-        bool x_in_cell = xmin <= p.x && p.x < xmax;
-        bool y_in_cell = ymin <= p.y && p.y < ymax;
+        bool x_in_cell = (xmin <= p.x && p.x < xmax);
+        bool y_in_cell = (ymin <= p.y && p.y < ymax);
         return x_in_cell && y_in_cell;
     }
 
@@ -233,16 +235,28 @@ class Cell {
         occupants.clear();
     }
 
+    // add neighbor
+    void add_neighbor(Cell* nbr) {
+        neighbors.push_back(nbr);
+    }
+
     // draw on canvas
     void draw() {
-        glBegin(GL_LINE_LOOP);              // Each set of 4 vertices form a quad
-        glColor4f(0.0f, 1.0f, 0.0f, 0.1); // Green
-        glVertex2f(xmin, ymin);    // x, y
+        glBegin(GL_LINE_LOOP);               // Draw outline of cell, with no fill
+        if (is_outer_cell) {
+            glColor4f(0.1, 0.7, 0.2, 0.2);    // Green outline
+        }
+        else {
+            glColor4f(0.0f, 1.0f, 0.0f, 0.2);    // Green outline
+        }
+        
+        glVertex2f(xmin, ymin);              // x, y
         glVertex2f(xmax, ymin);
         glVertex2f(xmax, ymax);
         glVertex2f(xmin, ymax);
         glEnd();
     }
+
 };
 
 
@@ -287,9 +301,29 @@ class SimulationData {
         double sim_time;
         bool all_stopped; 
 
-        void update(std::vector <Agent *> agents);
+        /** maintain a vector of agents sorted by pose.x, for quickly finding neighbors */
+        std::vector<Agent *> agents_byx_vec;
+
+        /** maintain a vector of agents sorted by pose.y, for quickly finding neighbors */
+        std::vector<Agent *> agents_byy_vec;
+
+        // 2D vector of cell pointers
+        std::vector<std::vector<Cell *>> cells;
+
+        // 1D vector of agent pointers
+        std::vector <Agent *> agents;
+
+        // Overflow cell for positions outside the range of cells in the vector
+        Cell *overflow_cell;
+
+        void update();
 
         void reset();
+
+        // // Find nearby agents to a given position
+        // std::vector<Agent *> find_nearby(Pose *agent_pos);
+
+        // Return what this agent would sense
         std::vector <sensor_result> sense(int agent_id, Pose agent_pos, meters_t sensing_range, radians_t sensing_angle);
 
         struct ltx {
@@ -299,18 +333,18 @@ class SimulationData {
         struct lty {
             bool operator()(const Agent *a, const Agent *b) const;
         };
-            
-        /** maintain a vector of agents sorted by pose.x, for quickly finding neighbors */
-        std::vector<Agent *> agents_byx_vec;
 
-        /** maintain a vector of agents sorted by pose.y, for quickly finding neighbors */
-        std::vector<Agent *> agents_byy_vec;
-
-        // 2D vector of cells
-        std::vector<std::vector<Cell *>> cells;
+        // Find which cell a position belongs to
+        Cell* get_cell_for_pos(Pose *p);
 
         // check if the byx, byy vecs are properly sorted
         bool vecs_sorted();
+
+        // Create cells and neighbor relations
+        void init_cell_lists();
+
+        // Add agents to correct cell lists
+        void populate_cell_lists();
 
 };
 

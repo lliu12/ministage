@@ -13,26 +13,27 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 100;
+    sp.num_agents = 5;
 
     sp.periodic = false;
     sp.circle_arena = false;
     sp.r_upper = 8;
     sp.r_lower = 0;
 
-    sp.cells_per_side = 15;
+    sp.sensing_angle = M_PI * 3.0 / 4.0;
+    sp.sensing_range = 1;
+
+    sp.cells_range = 10;
+    sp.cells_per_side = floor(2.0 * sp.cells_range / sp.sensing_range); // 15;
+    sp.cell_width = 2.0 * sp.cells_range / sp.cells_per_side;
     sp.use_sorted_agents = true;
     sp.use_cell_lists = true;
-    sp.cell_width = 2.0 * sp.r_upper / sp.cells_per_side;
     
-    sp.anglenoise = 1.5;
+    sp.anglenoise = 0.5;
     sp.anglebias = 0;
 
     sp.avg_runsteps = 40;
     sp.randomize_runsteps = true;
-
-    sp.sensing_angle = M_PI * 3.0 / 4.0;
-    sp.sensing_range = 1;
 
     sp.cruisespeed = 0.6;
     sp.turnspeed = 3;
@@ -46,7 +47,8 @@ int main(int argc, char* argv[])
 
     sp.verbose = false;
 
-    IS_TRUE(2 * sp.r_upper / sp.cells_per_side > sp.sensing_range);
+    IS_TRUE(2 * sp.cells_range / sp.cells_per_side >= sp.sensing_range);
+    // IS_TRUE(2 * sp.cells_range / sp.cells_per_side >= sp.dt * sp.cruisespeed;
 
     SimulationManager sim = SimulationManager(sp);
 
@@ -90,12 +92,13 @@ int main(int argc, char* argv[])
 
     }
 
-    printf("Testing nearest neighbor search...\n");
+    printf("Testing position sort neighbor-finding...\n");
     {
         sim.reset();
         for (int k = 0; k<5; k++) {
 
-            printf("Testing fiducial sorting (step k = %i)...\n", k);
+            printf("Testing sorting (step k = %i)...\n", k);
+            // after we run sd->update, positions should be sorted
             // bool sorted = sim.sd->vecs_sorted();
             Agent *begin_agent = *sim.sd->agents_byx_vec.begin();
             double last_x = begin_agent->get_pos().x;
@@ -105,7 +108,8 @@ int main(int argc, char* argv[])
                 // a->get_pos().Print("Sorted agents by x: ");
             }
 
-            printf("Testing narrowing down nearby neighbors (step k = %i)...\n", k);
+            // sanity check that the lower_bound returned exists and is >= the desired edge
+            // printf("Testing narrowing down nearby neighbors (step k = %i)...\n", k);
             Agent edge(-1, &sp, sim.sd); // dummy model used to find bounds in the sets
 
             for (Agent *a : sim.agents) {
@@ -121,8 +125,36 @@ int main(int argc, char* argv[])
             }
 
             sim.update();
-            sim.sd->update(sim.agents);
+            sim.sd->update();
         }
+    }
+
+
+
+    printf("Testing cell list neighbor-finding...\n");
+    {
+        // sim.reset();
+
+        printf("Testing cell construction...\n");
+        for (int idx = 0; idx < sp.cells_per_side; idx++) {
+            for (int idy = 0; idy < sp.cells_per_side; idy++) {
+                if (!sim.sd->cells[idx][idy]->is_outer_cell) {
+                    IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 8); // inner cells should have 8 neighbors
+                }
+                else if ((idx != 0 && idx < sp.cells_per_side - 1) || (idy != 0 && idy < sp.cells_per_side - 1)) {
+                    IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 6); // outer non-corner cells should have 6 neighbors (5 + overflow cell)
+                }
+                else {
+                    IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 4); // corner cells should have 4 neighbors (3 + overflow cell)
+                }
+            }
+        }
+
+        // printf("Testing get cell for pos function...\n");
+        // printf("cell width: %f", sp.cell_width);
+        // Pose p = Pose(-18, -9.9, 0, 0);
+        // sim.sd->get_cell_for_pos(&p);
+
     }
 
     if(0) {
@@ -142,17 +174,14 @@ int main(int argc, char* argv[])
         printf("Try opening a GUI window...\n");
         sim.reset();
 
-
         Fl_Window win(500, 500, "MiniStage");
         Canvas gui = Canvas(&sim, 0,0, win.w(), win.h());
 
-        // win.resizable(&gui);
+        win.resizable(&gui);
 
         // win.end();
         win.show();
-
         gui.startAnimation();
-
         return Fl::run();
     }
     else {return 0;}

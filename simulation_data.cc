@@ -8,21 +8,9 @@ SimulationData::SimulationData(sim_params *sim_params)
     sp = sim_params;
     sim_time = 0;
 
-    // populate cell lists
+    // initialize cell lists
     if (sp->use_cell_lists) {
-        float cur_x = -1.0 * sp->r_upper;
-
-        for (int r = 0; r < sp->cells_per_side; r++) {
-            // cells.push_back(std::vector<Cell *>);
-            float cur_y = -1.0 * sp->r_upper;
-
-            for (int c = 0; c < sp->cells_per_side; c++) {
-                cells[r][c] = new Cell(cur_x, cur_x + sp->cell_width, cur_y, cur_y + sp->cell_width);
-                cur_y += sp->cell_width;
-            }
-
-            cur_x += sp->cell_width;
-        }
+        init_cell_lists();
     }
 }
 
@@ -40,10 +28,10 @@ void SimulationData::reset() {
         std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
     }
 
-    // // populate cell lists
-    // if (sp->use_cell_lists) {
-
-    // }
+    // populate cell lists
+    if (sp->use_cell_lists) {
+        populate_cell_lists();
+    }
 }
 
 
@@ -65,7 +53,7 @@ bool SimulationData::lty::operator()(const Agent *a, const Agent *b) const
 }
 
 // update fields
-void SimulationData::update(std::vector <Agent *> agents) {
+void SimulationData::update() {
     // small optimization: if everyone was blocked last step, no need to re-sort
     bool all_blocked_helper = true;
     for (Agent *a : agents_byx_vec) 
@@ -77,9 +65,16 @@ void SimulationData::update(std::vector <Agent *> agents) {
     }
 
     if (!all_blocked_helper || sim_time == 0) {
+        // sort the position lists
         if (sp->use_sorted_agents) {
             std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
             std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
+        }
+
+        // update cell occupancy
+        // a performance update for later: since agents move slowly, 
+        if (sp->use_cell_lists) {
+            populate_cell_lists();
         }
     }
     else {
@@ -91,9 +86,126 @@ void SimulationData::update(std::vector <Agent *> agents) {
         all_stopped = true;
     }
 
-    // update simulation time
     sim_time += sp->dt;
 }
+
+void SimulationData::populate_cell_lists() {
+    // clear all current cell occupants
+    for (const auto& row : cells) {
+        for (Cell *c : row) {
+            c->occupants.clear();
+        }
+    }
+
+    // iterate through agents and make them occupants of the correct cell
+    for (Agent *a : agents) 
+        {
+            Cell *cur_cell = get_cell_for_pos(a->cur_pos);
+            cur_cell->occupants.push_back(a);
+    }
+}
+
+
+Cell* SimulationData::get_cell_for_pos(Pose *p) {
+    meters_t cr = sp->cells_range;
+    meters_t cw = sp->cell_width;
+
+    // if out of cell range, return overflow
+    if (p->x < -1.0 * cr || p->x >= cr || p->y < -1.0 * cr || p->y >= cr) {
+        // printf("in overflow \n");
+        return overflow_cell;
+    }
+    else {
+        meters_t dist_from_left = p->x - (-1.0 * cr);
+        int idx = floor(dist_from_left / cw);
+
+        meters_t dist_from_bottom = p->y - (-1.0 * cr);
+        int idy = floor(dist_from_bottom / cw);
+
+        // printf("idx: %i, idy: %i \n", idx, idy);
+
+        return cells[idx][idy];
+    }
+}
+
+
+
+void SimulationData::init_cell_lists() {
+    overflow_cell = new Cell(sp->cells_range, -1.0 * sp->cells_range, sp->cells_range, -1.0 * sp->cells_range);
+    overflow_cell->is_outer_cell = false;
+    overflow_cell->is_overflow_cell = true;
+
+    float cur_x = -1.0 * sp->cells_range;
+
+    // set bounds for each cell
+    // cells[0][0] is in the bottom left
+    // idx = a, idy = b is the 0-indexed cell which is ath from the left and bth from the bottom 
+    for (int idx = 0; idx < sp->cells_per_side; idx++) {
+        float cur_y = -1.0 * sp->cells_range;
+        for (int idy = 0; idy < sp->cells_per_side; idy++) {
+            cells[idx][idy] = new Cell(cur_x, cur_x + sp->cell_width, cur_y, cur_y + sp->cell_width);
+            cells[idx][idy]->is_outer_cell = (idx == 0 || idy == 0 || 
+                                            idx == sp->cells_per_side - 1 || idy == sp->cells_per_side - 1);
+            cells[idx][idy]->is_overflow_cell = false;
+
+            cur_y += sp->cell_width;
+        }
+        cur_x += sp->cell_width;
+    }
+
+    // populate each cell's vector of cell neighbors
+    // each cell initializes the linking for its neighbor to the top, right, and top-right diagonal (if that cell exists)
+    for (int idx = 0; idx < sp->cells_per_side; idx++) {
+        for (int idy = 0; idy < sp->cells_per_side; idy++) {
+            if (idx < sp->cells_per_side - 1) {
+                // link to neighbor on right
+                cells[idx][idy]->add_neighbor(cells[idx + 1][idy]);
+                cells[idx + 1][idy]->add_neighbor(cells[idx][idy]);
+            }
+
+            if (idy < sp->cells_per_side - 1) {
+                // link to neighbor above
+                cells[idx][idy]->add_neighbor(cells[idx][idy + 1]);
+                cells[idx][idy + 1]->add_neighbor(cells[idx][idy]);
+            }
+
+            if (idx < sp->cells_per_side - 1 && idy < sp->cells_per_side - 1) {
+                // link to upper right diagonal neighbor
+                cells[idx][idy]->add_neighbor(cells[idx + 1][idy + 1]);
+                cells[idx + 1][idy + 1]->add_neighbor(cells[idx][idy]);
+            }
+
+            if (idx > 0 && idy < sp->cells_per_side - 1) {
+                // link to upper left diagonal neighbor
+                cells[idx][idy]->add_neighbor(cells[idx - 1][idy + 1]);
+                cells[idx - 1][idy + 1]->add_neighbor(cells[idx][idy]);
+            }
+
+            if (cells[idx][idy]->is_outer_cell) {
+                // link to overflow cell
+                cells[idx][idy]->add_neighbor(overflow_cell);
+                overflow_cell->add_neighbor(cells[idx][idy]);
+            }
+
+            // if (sp->periodic) {
+            //     // TODO
+            // }
+        }
+    }
+}
+
+// // Find nearby agents to a given position
+// std::vector<Agent *> SimulationData::find_nearby(Pose *agent_pos) {
+//     std::vector<Agent *> nearby;
+
+//     if (sp->use_sorted_agents) {
+
+//     }
+
+//     // if (sp->use_cell_lists) {
+        
+//     // }
+// }
 
 
 // Return who an agent with id agent_id and Pose agent_pos would sense in its cone-shaped field of view

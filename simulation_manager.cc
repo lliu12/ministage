@@ -9,8 +9,14 @@ SimulationManager::SimulationManager(sim_params sim_params) {
     for (int i = 0; i < sp.num_agents; i++) {
         agents.push_back(new NoiseAgent(i, &sp, sd));
     }
-    sd->agents_byx_vec = agents;
-    sd->agents_byy_vec = agents;
+
+    sd->agents = agents;
+
+    if (sp.use_sorted_agents) {
+        sd->agents_byx_vec = agents;
+        sd->agents_byy_vec = agents;
+    }
+
     sd->reset();
 }
 
@@ -22,7 +28,7 @@ void SimulationManager::update() {
     // save data here before any updates occur
 
     // update simtime and the sorted agent info in simulationdata
-    sd->update(agents);
+    sd->update();
 
     // update all agent sensors
     for (Agent *a : agents) { a->sensing_update(); }
