@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
     sp.cells_range = 10;
     sp.cells_per_side = floor(2.0 * sp.cells_range / sp.sensing_range); // 15;
     sp.cell_width = 2.0 * sp.cells_range / sp.cells_per_side;
-    sp.use_sorted_agents = false;
+    // sp.use_sorted_agents = true;
     sp.use_cell_lists = true;
     
     sp.anglenoise = 1.5;
@@ -55,7 +55,6 @@ int main(int argc, char* argv[])
    int num_agents = sp.num_agents;
 
    // Run sanity checks
-   // If parameter is not true, test fails
 
     std::cout << "Checking in_vision_cone function..." << std::endl;
     {

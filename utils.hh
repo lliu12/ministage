@@ -327,7 +327,7 @@ class SimulationData {
         std::vector<Agent *> find_nearby_cell_lists(Pose *agent_pos);
 
         // Return what this agent would sense
-        std::vector <sensor_result> sense(int agent_id, Pose agent_pos, meters_t sensing_range, radians_t sensing_angle);
+        std::vector <sensor_result> sense(int agent_id, Pose agent_pos);
 
         struct ltx {
             bool operator()(const Agent *a, const Agent *b) const;
@@ -340,14 +340,17 @@ class SimulationData {
         // Find which cell a position belongs to
         Cell* get_cell_for_pos(Pose *p);
 
-        // check if the byx, byy vecs are properly sorted
-        bool vecs_sorted();
-
         // Create cells and neighbor relations
         void init_cell_lists();
 
         // Add agents to correct cell lists
         void populate_cell_lists();
+
+        // check that the two neighbor-finding implementations agree
+        bool neighbor_functions_agree(int agent_id, Pose agent_pos);
+
+        // check if the byx, byy vecs are properly sorted
+        bool vecs_sorted();
 
 };
 

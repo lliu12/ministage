@@ -104,7 +104,7 @@ void Agent::draw() {
         gluDeleteQuadric(robot_pos);
 
         // draw wedge for robot FOV
-        glColor4f(0, 0, 1, 0.2); // blue
+        glColor4f(0, 0, 1, 0.15); // blue
         GLUquadric *fov = gluNewQuadric();
         gluQuadricDrawStyle(fov, GLU_FILL);
         gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
@@ -153,7 +153,7 @@ void GoalAgent::sensing_update() {
         goal_updates();
     }
 
-    std::vector <sensor_result> sensed = sd->sense(id, get_pos(), sp->sensing_range, sp->sensing_angle);
+    std::vector <sensor_result> sensed = sd->sense(id, get_pos());
     stop = sensed.size() > 0; // agent will stop if any neighbor was sensed in vision cone
 
     travel_angle = angle_to_goal();
@@ -211,7 +211,7 @@ void GoalAgent::draw() {
     // draw small point at robot goal
     glPushMatrix(); 
         pose_shift(goal_pos);
-            glColor4f(1, 0, 1, .8); // magenta
+            glColor4f(1, 0, .8, .7); // magenta
             GLUquadric *goal = gluNewQuadric();
             gluQuadricDrawStyle(goal, GLU_FILL);
             gluDisk(goal, 0, 0.12, 20, 1);
@@ -225,9 +225,8 @@ void GoalAgent::draw() {
 // Define NoiseAgent class functions
 
 
-NoiseAgent::NoiseAgent(int agent_id, sim_params *sim_params, SimulationData *sim_data) : GoalAgent(agent_id, sim_params, sim_data) {
-
-}
+NoiseAgent::NoiseAgent(int agent_id, sim_params *sim_params, SimulationData *sim_data) 
+    : GoalAgent(agent_id, sim_params, sim_data) {}
 
 NoiseAgent::NoiseAgent() : GoalAgent() {}
 
@@ -256,7 +255,7 @@ void NoiseAgent::sensing_update() {
         goal_updates();
     }
 
-    std::vector <sensor_result> sensed = sd->sense(id, get_pos(), sp->sensing_range, sp->sensing_angle);
+    std::vector <sensor_result> sensed = sd->sense(id, get_pos());
     stop = sensed.size() > 0; // agent will stop if any neighbor was sensed in vision cone
     // if (stop) {printf("Agent %i stopping \n",id);}
     // printf("Agent in view: %i \n", stop);
@@ -267,7 +266,6 @@ void NoiseAgent::sensing_update() {
     }
 
     if (current_phase_count == 0) {
-
         // if a new run phase is beginning, get random runlength between 1/2 and 3/2 of provided runsteps
         if (sp->randomize_runsteps) {
             int lower = std::round(sp->avg_runsteps / 2);

@@ -40,7 +40,7 @@ void SimulationManager::update() {
 
 
 void SimulationManager::reset() {
-    sd->sim_time = 0; // since agents store this time as goal_birth_time
+    sd->sim_time = 0; // needs to happen first since agents store this time as goal_birth_time
     for (Agent *a : agents) { a->reset(); }
     sd->reset(); // new randomized poses are out of order... sort them again!
 }

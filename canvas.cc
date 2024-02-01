@@ -34,22 +34,23 @@ void Canvas::draw() {
         a->draw();
     }
 
-    for (const auto& row : sim->sd->cells) {
-        for (Cell *c : row) {
-            c->draw();
+    if (sim->sp.use_cell_lists) {
+        for (const auto& row : sim->sd->cells) {
+            for (Cell *c : row) {
+                c->draw();
+            }
         }
+
     }
 
-    glBegin(GL_LINE_LOOP);               // Draw outline of cell, with no fill
-        glColor4f(1, 0.7, 0.2, 1);    // Green outline 
-        glVertex2f(0, 0);              // x, y
-        glVertex2f(10, 0);
-        glVertex2f(10, 5);
-        glVertex2f(0, 5);
-    glEnd();
-
     // update simulation
-    if (!paused) { sim->update(); }
+    if (!paused) { 
+        sim->update(); 
+        // keep resetting simulation to test reset functions
+        // if (sim->sd->sim_time > 60) {
+        //     sim->reset();
+        // }
+    }
 
     // // // Swap buffers to display the rendered content
     // glFlush();

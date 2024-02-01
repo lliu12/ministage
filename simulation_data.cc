@@ -199,6 +199,8 @@ void SimulationData::init_cell_lists() {
 // Find nearby agents to a given position
 std::vector<Agent *> SimulationData::find_nearby_sorted_agents(Pose *agent_pos) {
     std::vector<Agent *> nearby_sorted_agents;
+
+    // vecs_sorted(); // test whether the position vectors are sorted
     
     if (sp->use_sorted_agents) {
         double rng = sp->sensing_range;
@@ -231,9 +233,6 @@ std::vector<Agent *> SimulationData::find_nearby_sorted_agents(Pose *agent_pos) 
         std::set_intersection(horiz.begin(), horiz.end(), vert.begin(), vert.end(), std::inserter(nearby_sorted_agents, nearby_sorted_agents.end()));
     }
 
-    // if (sp->use_cell_lists) {
-        
-    // }
     return nearby_sorted_agents;
 }
 
@@ -259,39 +258,11 @@ std::vector<Agent *> SimulationData::find_nearby_cell_lists(Pose *agent_pos) {
 
 
 // Return who an agent with id agent_id and Pose agent_pos would sense in its cone-shaped field of view
-std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, meters_t sensing_range, radians_t sensing_angle) {
+std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos) {
+    // check that sensing functions agree
+    // neighbor_functions_agree(agent_id, agent_pos);
+
     std::vector <sensor_result> result;
-
-    // // test if the two sensing methods match
-    // std::vector<Agent *> nearby_sa = find_nearby_sorted_agents(&agent_pos);
-    // std::vector<Agent *> nearby_cl = find_nearby_cell_lists(&agent_pos);
-
-    // std::vector<Agent *> seen_sa;
-    // std::vector<Agent *> seen_cl;
-
-    // for (Agent *nbr : nearby_sa) { 
-    //     cone_result cr = in_vision_cone(agent_pos, nbr->get_pos(), sp->sensing_range, sp->sensing_angle);
-    //     if (cr.in_cone && agent_id != nbr->id) {
-    //         seen_sa.push_back(nbr);
-    //     }
-    // }
-
-
-    // for (Agent *nbr : nearby_cl) { 
-    //     cone_result cr = in_vision_cone(agent_pos, nbr->get_pos(), sp->sensing_range, sp->sensing_angle);
-    //     if (cr.in_cone && agent_id != nbr->id) {
-    //         seen_cl.push_back(nbr);
-    //     }
-    // }
-
-    // if(seen_sa.size() != seen_cl.size()) {
-    //     printf("Different number of agents sensed using sorted positions vs. cell lists! \n");
-    // }
-    // // else {
-    // //     printf("Sensing methods match. \n");
-    // // }
-
-
 
     // find nearby neighbors with vectors
     // first, find a smaller collection of nearby neighbors
@@ -315,6 +286,13 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos, 
 
     return result;
 }
+
+
+
+
+
+
+// functions for checking sensing correctness
 
 // check that the position vectors are sorted
 bool SimulationData::vecs_sorted() {
@@ -344,4 +322,45 @@ bool SimulationData::vecs_sorted() {
     }
 
     return sorted;
+}
+
+// check that the two neighbor-finding implementations agree (find the same number of neighbors in cone)
+bool SimulationData::neighbor_functions_agree(int agent_id, Pose agent_pos) {
+    if (!sp->use_cell_lists || ! sp->use_sorted_agents) {
+        printf("To check if the two sensing implementations agree, use_cell_lists and use_sorted_agents both need to be true. \n");
+        return false;
+    }
+
+    bool agree = true; 
+
+    std::vector<Agent *> nearby_sa = find_nearby_sorted_agents(&agent_pos);
+    std::vector<Agent *> nearby_cl = find_nearby_cell_lists(&agent_pos);
+
+    std::vector<Agent *> seen_sa;
+    std::vector<Agent *> seen_cl;
+
+    for (Agent *nbr : nearby_sa) { 
+        cone_result cr = in_vision_cone(agent_pos, nbr->get_pos(), sp->sensing_range, sp->sensing_angle);
+        if (cr.in_cone && agent_id != nbr->id) {
+            seen_sa.push_back(nbr);
+        }
+    }
+
+
+    for (Agent *nbr : nearby_cl) { 
+        cone_result cr = in_vision_cone(agent_pos, nbr->get_pos(), sp->sensing_range, sp->sensing_angle);
+        if (cr.in_cone && agent_id != nbr->id) {
+            seen_cl.push_back(nbr);
+        }
+    }
+
+    if(seen_sa.size() != seen_cl.size()) {
+        printf("Different number of agents sensed using sorted positions vs. cell lists! \n");
+        agree = false;
+    }
+    // else {
+    //     printf("Sensing methods match. \n");
+    // }
+
+    return agree;
 }
