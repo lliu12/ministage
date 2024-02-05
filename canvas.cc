@@ -3,6 +3,9 @@
 Canvas::Canvas(SimulationManager *simulation, int x, int y, int width, int height)
     : Fl_Gl_Window(x, y, width, height), sim(simulation)
 {
+    _scale = sim->sp.gui_zoom;
+    _x = 0;
+    _y = 0;
 }
 
 Canvas::~Canvas() {
@@ -34,6 +37,7 @@ void Canvas::draw() {
         a->draw();
     }
 
+    // Draw cells
     if (sim->sp.use_cell_lists) {
         for (const auto& row : sim->sd->cells) {
             for (Cell *c : row) {
@@ -43,10 +47,22 @@ void Canvas::draw() {
 
     }
 
+    // Draw boundaries of periodic arena
+    if (sim->sp.periodic) {
+        glBegin(GL_LINE_LOOP);               // Draw outline of cell, with no fill
+            glColor4f(1, 0.7, 0.2, 1);    // Orange outline 
+            glVertex2f(-sim->sp.r_upper, -sim->sp.r_upper);              // x, y
+            glVertex2f(sim->sp.r_upper, -sim->sp.r_upper);
+            glVertex2f(sim->sp.r_upper, sim->sp.r_upper);
+            glVertex2f(-sim->sp.r_upper, sim->sp.r_upper);
+        glEnd();
+    }
+
+
     // update simulation
     if (!paused) { 
         sim->update(); 
-        // keep resetting simulation to test reset functions
+        // keep resetting simulation (to test reset functions)
         // if (sim->sd->sim_time > 60) {
         //     sim->reset();
         // }

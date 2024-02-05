@@ -151,7 +151,9 @@ class Pose {
     /** Set the pose to zero [0,0,0,0] */
     void Zero() { x = y = z = a = 0.0; }
 
-    // add motion using local angle
+    // Add motion using local angle.
+    // Warning: does not directly add x and y coordinates! Instead, p.x describes how much the agent moves 
+    // forward in the agent's local angle POV.
     inline Pose operator+(const Pose &p) const
     {
         const double cosa = cos(a);
@@ -351,6 +353,19 @@ class SimulationData {
 
         // check if the byx, byy vecs are properly sorted
         bool vecs_sorted();
+
+};
+
+// Color object
+class Color {
+    public:
+    double r, g, b, a;
+    Color(double r, double g, double b, double a) : r(r), g(g), b(b), a(a) {}
+    Color() : r(1.0), g(0.0), b(0.0), a(1.0) {}
+    ~Color() {};
+
+    static Color RandomColor()
+    { return Color(drand48(), drand48(), drand48(), 1.0); }
 
 };
 

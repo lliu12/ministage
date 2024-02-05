@@ -20,6 +20,7 @@ Agent::Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data) {
     sd = sim_data;    
     id = agent_id;
     cur_pos = new Pose();
+    color = Color::RandomColor();
     reset();
 }
 Agent::Agent() {}
@@ -66,8 +67,14 @@ Pose Agent::get_pos() const {
     return *cur_pos;
 }
 
-//// Use sensor information to update motion (turning and forward speed)
+// Update sensor information
 void Agent::sensing_update() {
+
+}
+
+// Update the robot's intended forward and turning speed
+void Agent::decision_update() {
+
 }
 
 //// Update robot position
@@ -111,6 +118,14 @@ void Agent::draw() {
                     rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
                     rtod(-sp->sensing_angle)); // sweep angle
         gluDeleteQuadric(fov);
+
+        // draw heading
+        glBegin(GL_LINES);
+            glColor4f(0, 0, 1, 1); 
+            glVertex2f(0,0);              // x, y
+            glVertex2f(sp->sensing_range, 0);
+        glEnd();
+
     glPopMatrix();
 }
 
@@ -145,7 +160,7 @@ void GoalAgent::goal_updates() {
     goal_birth_time = sd->sim_time;
 }
 
-//// Use sensor information to update motion (turning and forward speed)
+// Update sensor information
 void GoalAgent::sensing_update() {
 
     // first, check if robot has reached its goal and update variables accordingly
@@ -156,6 +171,12 @@ void GoalAgent::sensing_update() {
     std::vector <sensor_result> sensed = sd->sense(id, get_pos());
     stop = sensed.size() > 0; // agent will stop if any neighbor was sensed in vision cone
 
+    decision_update();
+}
+
+
+// Update the robot's intended forward and turning speed
+void GoalAgent::decision_update() {
     travel_angle = angle_to_goal();
     
     fwd_speed = stop ? 0 : sp->cruisespeed;
@@ -188,8 +209,7 @@ double GoalAgent::angle_to_goal() {
         int closest_pos = 0;
         double closest_dist = std::numeric_limits<double>::infinity();
         for ( int i=0; i<9; i++ ) {
-          Pose diff = Pose(xs[i], ys[i], 0, 0);
-          Pose test_pos = goal_pos + diff;
+          Pose test_pos = Pose(goal_pos.x + xs[i], goal_pos.y + ys[i], 0, 0);
           double dist = cur_pos->Distance(test_pos);
           if (dist < closest_dist) {
             closest_dist = dist;
@@ -201,6 +221,7 @@ double GoalAgent::angle_to_goal() {
       
       double x_error = goal_pos_helper.x - cur_pos->x;
       double y_error = goal_pos_helper.y - cur_pos->y;
+
       return atan2(y_error, x_error);
 }
 
@@ -248,18 +269,8 @@ double NoiseAgent::get_travel_angle() {
   return angle_to_goal() + (sp->anglenoise == -1 ? Random::get_unif_double(-M_PI, M_PI) : Random::get_normal_double(sp->anglebias, sp->anglenoise));
 }
 
-void NoiseAgent::sensing_update() {
-
-    // first, check if robot has reached its goal and update variables accordingly
-    if (get_pos().Distance(goal_pos) < sp->goal_tolerance) {
-        goal_updates();
-    }
-
-    std::vector <sensor_result> sensed = sd->sense(id, get_pos());
-    stop = sensed.size() > 0; // agent will stop if any neighbor was sensed in vision cone
-    // if (stop) {printf("Agent %i stopping \n",id);}
-    // printf("Agent in view: %i \n", stop);
-
+// Update the robot's intended forward and turning speed
+void NoiseAgent::decision_update() {
     // check if current run phase is over
     if (current_phase_count >= runsteps) {
         current_phase_count = 0;

@@ -24,8 +24,8 @@ class Canvas : public Fl_Gl_Window {
 
     // double _pitch; // left-right (about y)
     // double _yaw; // up-down (about x)
-    // double _x, _y, _z;
-    // double _scale;
+    double _x, _y; // , _z;
+    double _scale;
     // double _pixels_width;
     // double _pixels_height;
     // double _y_min;

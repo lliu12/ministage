@@ -15,6 +15,7 @@ class Agent {
     sim_params *sp;
     SimulationData *sd;
     Pose *cur_pos;
+    Color color;
 
     // current speeds
     double fwd_speed; // meters per second
@@ -22,8 +23,11 @@ class Agent {
 
     virtual void reset();
 
-    // Use sensor information to update the robot's intended forward and turning speed
+    // Update sensor information
     virtual void sensing_update();
+
+    // Update the robot's intended forward and turning speed
+    virtual void decision_update();
 
     // Use forward and turning speed to update robot position
     virtual void position_update();
@@ -67,9 +71,11 @@ class GoalAgent : public Agent {
     //// Updates to make when robot reaches goal
     virtual void goal_updates();
 
-    //// Updates made each step for values other than robot speed and direction
-    //// Determine whether robot is blocked and update info about blockedness, closest neighbor, periodicity updates, etc.
+    // Update the robot's intended forward and turning speed
     virtual void sensing_update() override;
+
+    // Update the robot's intended forward and turning speed
+    virtual void decision_update() override;
 
     //// Get (global) angle robot should move in to head straight to goal
     virtual double angle_to_goal();
@@ -101,8 +107,11 @@ class NoiseAgent : public GoalAgent {
     //// Reset robot data for a new trial
     virtual void reset() override;
 
-    //// Update robot speed and turning angle
-    virtual void sensing_update() override;
+    // // Update the robot's intended forward and turning speed
+    // virtual void sensing_update() override;
+
+    // Update the robot's intended forward and turning speed
+    virtual void decision_update() override;
 
     //// Determine angle for robot to steer in (after adding noise)
     virtual double get_travel_angle();
