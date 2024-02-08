@@ -203,20 +203,7 @@ double GoalAgent::angle_to_goal() {
 
       // if space is periodic, figure out where robot should move to for shortest path to goal
       else {
-        double s = 2 * sp->r_upper;
-        double xs [9] = {-s, -s, -s, 0, 0, 0, s, s, s};
-        double ys [9] = {-s, 0, s, -s, 0, s, -s, 0, s};
-        int closest_pos = 0;
-        double closest_dist = std::numeric_limits<double>::infinity();
-        for ( int i=0; i<9; i++ ) {
-          Pose test_pos = Pose(goal_pos.x + xs[i], goal_pos.y + ys[i], 0, 0);
-          double dist = cur_pos->Distance(test_pos);
-          if (dist < closest_dist) {
-            closest_dist = dist;
-            closest_pos = i;
-          }
-        }
-        goal_pos_helper = Pose(goal_pos.x + xs[closest_pos], goal_pos.y + ys[closest_pos], 0, 0);
+            goal_pos_helper = nearest_periodic(get_pos(), goal_pos, sp->r_upper);
       }
       
       double x_error = goal_pos_helper.x - cur_pos->x;

@@ -130,7 +130,17 @@ Cell* SimulationData::get_cell_for_pos(Pose *p) {
     }
 }
 
+// add the two cells as neighbors if they are a valid pair (handling periodic cell wrapping)
+void SimulationData::cell_neighbor_helper(int idx, int idy, int nbr_idx, int nbr_idy) {
+    // // if neighbor cell is beyond cell array bounds, only add them (after wrapping) if simulation is periodic
+    // if (nbr_idx >= sp->cells_per_side || nbr_idy >= sp->cells_per_side) {
+    //     if (sp->periodic) {
+    //             cells[idx][idy]->add_neighbor(cells[nbr_idx % sp->cells_per_side][nbr_idy % sp->cells_per_side]);
+    //             cells[idx - 1][idy + 1]->add_neighbor(cells[idx][idy]);
+    //     }
+    // }
 
+}
 
 void SimulationData::init_cell_lists() {
     overflow_cell = new Cell(sp->cells_range, -1.0 * sp->cells_range, sp->cells_range, -1.0 * sp->cells_range);
@@ -192,6 +202,20 @@ void SimulationData::init_cell_lists() {
             // if (sp->periodic) {
             //     // TODO
             // }
+
+
+            
+            // link to neighbor on right
+
+            // link to neighbor above
+
+            // link to upper right diagonal neighbor
+
+            // link to upper left diagonal neighbor
+
+            // link to overflow cell
+
+
         }
     }
 }
@@ -271,7 +295,11 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos) 
 
     // now test more carefully for whether these neighbors are in agent's FOV
     for (Agent *nbr : nearby) {
+
         Pose nbr_pos = nbr->get_pos();
+        // if periodic world, test if the nearest periodic coordinate is in FOV
+        if (sp->periodic) { nbr_pos = nearest_periodic(agent_pos, nbr_pos, sp->r_upper); }
+
         int nbr_id = nbr->id;
 
         cone_result cr = in_vision_cone(agent_pos, nbr_pos, sp->sensing_range, sp->sensing_angle);
@@ -340,7 +368,10 @@ bool SimulationData::neighbor_functions_agree(int agent_id, Pose agent_pos) {
     std::vector<Agent *> seen_cl;
 
     for (Agent *nbr : nearby_sa) { 
-        cone_result cr = in_vision_cone(agent_pos, nbr->get_pos(), sp->sensing_range, sp->sensing_angle);
+        Pose nbr_pos = nbr->get_pos();
+        if (sp->periodic) { nbr_pos = nearest_periodic(agent_pos, nbr_pos, sp->r_upper); }
+
+        cone_result cr = in_vision_cone(agent_pos, nbr_pos, sp->sensing_range, sp->sensing_angle);
         if (cr.in_cone && agent_id != nbr->id) {
             seen_sa.push_back(nbr);
         }
@@ -348,7 +379,10 @@ bool SimulationData::neighbor_functions_agree(int agent_id, Pose agent_pos) {
 
 
     for (Agent *nbr : nearby_cl) { 
-        cone_result cr = in_vision_cone(agent_pos, nbr->get_pos(), sp->sensing_range, sp->sensing_angle);
+        Pose nbr_pos = nbr->get_pos();
+        if (sp->periodic) { nbr_pos = nearest_periodic(agent_pos, nbr_pos, sp->r_upper); }
+
+        cone_result cr = in_vision_cone(agent_pos, nbr_pos, sp->sensing_range, sp->sensing_angle);
         if (cr.in_cone && agent_id != nbr->id) {
             seen_cl.push_back(nbr);
         }

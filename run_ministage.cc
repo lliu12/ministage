@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     // sp.use_sorted_agents = true;
     sp.use_cell_lists = true;
     
-    sp.anglenoise = 0.5;
+    sp.anglenoise = 0;
     sp.anglebias = 0;
 
     sp.avg_runsteps = 40;
@@ -55,6 +55,50 @@ int main(int argc, char* argv[])
    int num_agents = sp.num_agents;
 
    // Run sanity checks
+
+    std::cout << "Checking nearest_periodic functions..." << std::endl;
+    {
+        // check two functions against each other
+        for (int i = 0; i < 500; i++)
+        {
+            Pose a = Pose::Random(-sp.r_upper, sp.r_upper, -sp.r_upper, sp.r_upper);
+            Pose b = Pose::Random(-sp.r_upper, sp.r_upper, -sp.r_upper, sp.r_upper);
+            IS_TRUE(nearest_periodic(a, b, sp.r_upper) == nearest_periodic_slow(a, b, sp.r_upper));
+        }
+
+        // check some known cases
+        IS_TRUE(nearest_periodic(Pose(7,0,0,0), Pose(6,0,0,0), 8) == Pose(6,0,0,0));
+        IS_TRUE(nearest_periodic(Pose(7,0,0,0), Pose(-7,0,0,0), 8) == Pose(9,0,0,0));
+        IS_TRUE(nearest_periodic(Pose(0,-6,0,0), Pose(0,3,0,0), 8) == Pose(0,-13,0,0));
+        IS_TRUE(nearest_periodic(Pose(7,7,0,0), Pose(-7,-7,0,0), 8) == Pose(9,9,0,0));
+
+        // int trials = 10000000;
+
+        // // new function is faster by about 20%
+        // auto start_time = std::chrono::high_resolution_clock::now();
+        // for (int i = 0; i < trials; i++)
+        // {
+        //     Pose a = Pose::Random(-sp.r_upper, sp.r_upper, -sp.r_upper, sp.r_upper);
+        //     Pose b = Pose::Random(-sp.r_upper, sp.r_upper, -sp.r_upper, sp.r_upper);
+        //     nearest_periodic(a, b, sp.r_upper);
+        // }
+        // auto end_time = std::chrono::high_resolution_clock::now();
+        // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+        // std::cout << "Time taken to run faster nearest_periodic function: " << duration.count() << " milliseconds" << std::endl;
+
+
+        // start_time = std::chrono::high_resolution_clock::now();
+        // for (int i = 0; i < trials; i++)
+        // {
+        //     Pose a = Pose::Random(-sp.r_upper, sp.r_upper, -sp.r_upper, sp.r_upper);
+        //     Pose b = Pose::Random(-sp.r_upper, sp.r_upper, -sp.r_upper, sp.r_upper);
+        //     nearest_periodic_slow(a, b, sp.r_upper);
+        // }
+        // end_time = std::chrono::high_resolution_clock::now();
+        // duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+        // std::cout << "Time taken to run slower nearest_periodic function: " << duration.count() << " milliseconds" << std::endl;
+
+    }
 
     std::cout << "Checking in_vision_cone function..." << std::endl;
     {
@@ -161,7 +205,7 @@ int main(int argc, char* argv[])
 
     }
 
-    if(1) {
+    if(0) {
         // try running a trial
         printf("Try running a trial...\n");
         auto start_time = std::chrono::high_resolution_clock::now();
