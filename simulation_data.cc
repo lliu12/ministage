@@ -130,18 +130,6 @@ Cell* SimulationData::get_cell_for_pos(Pose *p) {
     }
 }
 
-// add the two cells as neighbors if they are a valid pair (handling periodic cell wrapping)
-void SimulationData::cell_neighbor_helper(int idx, int idy, int nbr_idx, int nbr_idy) {
-    // // if neighbor cell is beyond cell array bounds, only add them (after wrapping) if simulation is periodic
-    // if (nbr_idx >= sp->cells_per_side || nbr_idy >= sp->cells_per_side) {
-    //     if (sp->periodic) {
-    //             cells[idx][idy]->add_neighbor(cells[nbr_idx % sp->cells_per_side][nbr_idy % sp->cells_per_side]);
-    //             cells[idx - 1][idy + 1]->add_neighbor(cells[idx][idy]);
-    //     }
-    // }
-
-}
-
 void SimulationData::init_cell_lists() {
     overflow_cell = new Cell(sp->cells_range, -1.0 * sp->cells_range, sp->cells_range, -1.0 * sp->cells_range);
     overflow_cell->is_outer_cell = false;
@@ -169,55 +157,47 @@ void SimulationData::init_cell_lists() {
     // each cell initializes the linking for its neighbor to the top, right, and top-right diagonal (if that cell exists)
     for (int idx = 0; idx < sp->cells_per_side; idx++) {
         for (int idy = 0; idy < sp->cells_per_side; idy++) {
-            if (idx < sp->cells_per_side - 1) {
-                // link to neighbor on right
-                cells[idx][idy]->add_neighbor(cells[idx + 1][idy]);
-                cells[idx + 1][idy]->add_neighbor(cells[idx][idy]);
-            }
+            // link to neighbor on right
+            cell_neighbor_helper(idx, idy, idx + 1, idy);
 
-            if (idy < sp->cells_per_side - 1) {
-                // link to neighbor above
-                cells[idx][idy]->add_neighbor(cells[idx][idy + 1]);
-                cells[idx][idy + 1]->add_neighbor(cells[idx][idy]);
-            }
+            // link to neighbor above
+            cell_neighbor_helper(idx, idy, idx, idy + 1);
 
-            if (idx < sp->cells_per_side - 1 && idy < sp->cells_per_side - 1) {
-                // link to upper right diagonal neighbor
-                cells[idx][idy]->add_neighbor(cells[idx + 1][idy + 1]);
-                cells[idx + 1][idy + 1]->add_neighbor(cells[idx][idy]);
-            }
+            // link to upper right diagonal neighbor
+            cell_neighbor_helper(idx, idy, idx + 1, idy + 1);
 
-            if (idx > 0 && idy < sp->cells_per_side - 1) {
-                // link to upper left diagonal neighbor
-                cells[idx][idy]->add_neighbor(cells[idx - 1][idy + 1]);
-                cells[idx - 1][idy + 1]->add_neighbor(cells[idx][idy]);
-            }
+            // link to upper left diagonal neighbor
+            cell_neighbor_helper(idx, idy, idx - 1, idy + 1);
 
+            // link to overflow cell
             if (cells[idx][idy]->is_outer_cell) {
                 // link to overflow cell
                 cells[idx][idy]->add_neighbor(overflow_cell);
                 overflow_cell->add_neighbor(cells[idx][idy]);
             }
-
-            // if (sp->periodic) {
-            //     // TODO
-            // }
-
-
-            
-            // link to neighbor on right
-
-            // link to neighbor above
-
-            // link to upper right diagonal neighbor
-
-            // link to upper left diagonal neighbor
-
-            // link to overflow cell
-
-
         }
     }
+}
+
+
+// add the two cells as neighbors (two-way) if they are a valid pair (handling periodic cell wrapping)
+void SimulationData::cell_neighbor_helper(int idx, int idy, int nbr_idx, int nbr_idy) {
+    int cps = sp->cells_per_side;
+    // if neighbor cell is beyond cell array bounds, only add them (after wrapping) if simulation is periodic
+    if (nbr_idx >= cps || nbr_idx < 0 || nbr_idy >= cps || nbr_idy < 0) {
+        if (sp->periodic) {
+                Cell *wrapped_nbr = cells[(nbr_idx + cps) % cps][(nbr_idy + cps) % cps];
+                cells[idx][idy]->add_neighbor(wrapped_nbr);
+                wrapped_nbr->add_neighbor(cells[idx][idy]);
+        }
+    }
+
+    // otherwise make the cells neighbors as normal
+    else {
+        cells[idx][idy]->add_neighbor(cells[nbr_idx][nbr_idy]);
+        cells[nbr_idx][nbr_idy]->add_neighbor(cells[idx][idy]);
+    }
+
 }
 
 // Find nearby agents to a given position
@@ -295,6 +275,7 @@ std::vector <sensor_result> SimulationData::sense(int agent_id, Pose agent_pos) 
 
     // now test more carefully for whether these neighbors are in agent's FOV
     for (Agent *nbr : nearby) {
+        // printf("Agent %i has agent %i nearby... \n", agent_id, nbr->id);
 
         Pose nbr_pos = nbr->get_pos();
         // if periodic world, test if the nearest periodic coordinate is in FOV

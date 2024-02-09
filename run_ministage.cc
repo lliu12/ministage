@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 1;
+    sp.num_agents = 100;
 
     sp.periodic = true;
     sp.circle_arena = false;
@@ -24,9 +24,10 @@ int main(int argc, char* argv[])
     sp.sensing_range = 1;
 
     sp.cells_range = 10;
+    if(sp.periodic) { sp.cells_range = sp.r_upper; }
     sp.cells_per_side = floor(2.0 * sp.cells_range / sp.sensing_range); // 15;
     sp.cell_width = 2.0 * sp.cells_range / sp.cells_per_side;
-    // sp.use_sorted_agents = true;
+    sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
     
     sp.anglenoise = 0;
@@ -55,6 +56,8 @@ int main(int argc, char* argv[])
    int num_agents = sp.num_agents;
 
    // Run sanity checks
+
+    std::cout << "Running (noncomprehensive) sanity checks on simulation... no red error messages = all tests passed!" << std::endl;
 
     std::cout << "Checking nearest_periodic functions..." << std::endl;
     {
@@ -132,7 +135,6 @@ int main(int argc, char* argv[])
         IS_TRUE(!in_vision_cone(p,q,1, M_PI).in_cone);
         IS_TRUE(!in_vision_cone(p,q,5, M_PI/2).in_cone);
         IS_TRUE(in_vision_cone(p,q,5, 1.1 * M_PI / 2).in_cone);
-
     }
 
     printf("Testing position sort neighbor-finding...\n");
@@ -197,12 +199,19 @@ int main(int argc, char* argv[])
             }
         }
 
-
-        // printf("Testing get cell for pos function...\n");
-        // printf("cell width: %f", sp.cell_width);
-        // Pose p = Pose(-18, -9.9, 0, 0);
-        // sim.sd->get_cell_for_pos(&p);
-
+        else {
+            for (int idx = 0; idx < sp.cells_per_side; idx++) {
+                // if simulation periodic
+                for (int idy = 0; idy < sp.cells_per_side; idy++) {
+                    if (sim.sd->cells[idx][idy]->is_outer_cell) {
+                        IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 9); // outer cells should have 9 neighbors (8 + overflow which should never get used)
+                    }
+                    else {
+                        IS_TRUE(sim.sd->cells[idx][idy]->neighbors.size() == 8); // inner cells 8 neighbors
+                    }
+                }
+            }
+        }
     }
 
     if(0) {
@@ -232,6 +241,87 @@ int main(int argc, char* argv[])
         gui.startAnimation();
         return Fl::run();
     }
-    else {return 0;}
+
+
+
+    // display a GUI for testing periodic sensing
+    if (0) {
+        sim_params sp_test;
+
+        sp_test.num_agents = 3;
+
+        sp_test.periodic = true;
+        sp_test.circle_arena = false;
+        sp_test.r_upper = 8;
+        sp_test.r_lower = 0;
+
+        sp_test.sensing_angle = M_PI * 3.0 / 4.0;
+        sp_test.sensing_range = 1;
+
+        sp_test.cells_range = 10;
+        if(sp_test.periodic) { sp_test.cells_range = sp_test.r_upper; }
+        sp_test.cells_per_side = floor(2.0 * sp_test.cells_range / sp_test.sensing_range);
+        sp_test.cell_width = 2.0 * sp_test.cells_range / sp_test.cells_per_side;
+        sp_test.use_sorted_agents = false;
+        sp_test.use_cell_lists = true;
+        
+        sp_test.anglenoise = 0;
+        sp_test.anglebias = 0;
+
+        sp_test.avg_runsteps = 40;
+        sp_test.randomize_runsteps = true;
+
+        sp_test.cruisespeed = 0.6;
+        sp_test.turnspeed = 10;
+        sp_test.goal_tolerance = 0.3;
+
+        sp_test.dt = .1;
+
+        sp_test.gui_speedup = 5; // speed up gui compared to real time
+        // sp_test.gui_draw_every = 5; // update gui every x updates
+        sp_test.gui_zoom = 20; // zoom in on gui
+
+        sp_test.verbose = false;
+
+
+        SimulationManager sim_test = SimulationManager(sp_test);
+        sim_test.reset();
+
+        // // test horizontal
+        // sim_test.agents[0]->set_pos(Pose(6, 0, 0, 0));
+        // sim_test.agents[0]->goal_pos = (Pose(-7, 0, 0, 0));
+        // sim_test.agents[1]->set_pos(Pose(-7.5, 0, 0, 0));
+        // sim_test.agents[1]->goal_pos = (Pose(-7.0, 0, 0, 0));
+        // sim_test.agents[2]->set_pos(Pose(-7.0, 0, 0, M_PI));
+        // sim_test.agents[2]->goal_pos = (Pose(-7.5, 0, 0, 0));
+
+        // // test vertical
+        // sim_test.agents[0]->set_pos(Pose(0, 6, 0, M_PI / 2));
+        // sim_test.agents[0]->goal_pos = (Pose(0, -7, 0, M_PI / 2));
+        // sim_test.agents[1]->set_pos(Pose(0, -7.50, 0, M_PI / 2));
+        // sim_test.agents[1]->goal_pos = (Pose(0, -7.0, 0, 0));
+        // sim_test.agents[2]->set_pos(Pose(0, -7.0, 0, M_PI * 3 / 2));
+        // sim_test.agents[2]->goal_pos = (Pose(0, -7.5, 0, 0));
+
+        // test a corner
+        sim_test.agents[0]->set_pos(Pose(7, 7, 0, M_PI / 4));
+        sim_test.agents[0]->goal_pos = (Pose(-7, -7, 0, 0));
+        sim_test.agents[1]->set_pos(Pose(-7.5, -7.50, 0, M_PI / 2));
+        sim_test.agents[1]->goal_pos = (Pose(-7.5, -7.0, 0, 0));
+        sim_test.agents[2]->set_pos(Pose(-7.5, -7.0, -7, M_PI * 3 / 2));
+        sim_test.agents[2]->goal_pos = (Pose(-7.5, -7.5, 0, 0));
+
+        printf("Periodic test window...\n");
+        Fl_Window win(500, 500, "MiniStage Periodic Sensing Test");
+        Canvas gui = Canvas(&sim_test, 0,0, win.w(), win.h());
+
+        win.resizable(&gui);
+        win.show();
+        gui.startAnimation();
+        return Fl::run();
+    }
+
+
+    return 0;
 
 }

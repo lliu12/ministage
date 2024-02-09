@@ -11,6 +11,7 @@ class SimulationData;
 // An agent with sensing abilities and a location
 class Agent {
     public:
+    Pose goal_pos;
     int id;
     sim_params *sp;
     SimulationData *sd;
@@ -55,7 +56,7 @@ class Agent {
 // A robot which navigates directly to randomly generated individual goals
 class GoalAgent : public Agent {
     public:
-    Pose goal_pos;
+    // Pose goal_pos;
     radians_t travel_angle;
 
     int goals_reached;
