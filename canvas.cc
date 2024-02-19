@@ -39,7 +39,7 @@ void Canvas::draw() {
     }
 
     // Draw cells
-    if (sim->sp.use_cell_lists) {
+    if (sim->sp.use_cell_lists & sim->sp.gui_draw_cells) {
         for (const auto& row : sim->sd->cells) {
             for (Cell *c : row) {
                 c->draw();

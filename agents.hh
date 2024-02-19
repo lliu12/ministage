@@ -4,6 +4,7 @@
 #include <cmath>
 #include "random.hh"
 #include "utils.hh"
+#include <deque>
 
 class SimulationData;
 
@@ -17,6 +18,9 @@ class Agent {
     SimulationData *sd;
     Pose *cur_pos;
     Color color;
+
+    // store recent poses
+    std::deque<Pose> trail;
 
     // current speeds
     double fwd_speed; // meters per second
@@ -43,6 +47,9 @@ class Agent {
     Pose random_pos();
 
     virtual void draw();
+
+    // save current position as last footprint in trail
+    void update_trail();
 
     // Constructor
     Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data);

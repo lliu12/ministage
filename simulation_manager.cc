@@ -3,6 +3,15 @@
 // Constructor
 SimulationManager::SimulationManager(sim_params sim_params) {
     sp = sim_params;
+
+    // Warnings about incompatible parameter settings
+    if(sp.periodic & sp.use_cell_lists & (sp.cells_range != sp.r_upper)) { 
+        sp.cells_range = sp.r_upper; 
+        printf("Warning: in a periodic simulation using cell lists, cells_range must equal r_upper range.\n");
+    }
+
+
+
     sd = new SimulationData(&sim_params);
 
     // Create agents vector and pass copies to SimulationData

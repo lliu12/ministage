@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 100;
+    sp.num_agents = 10;
 
     sp.periodic = true;
     sp.circle_arena = false;
@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
     sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
     
-    sp.anglenoise = 0;
+    sp.anglenoise = 1;
     sp.anglebias = 0;
 
     sp.avg_runsteps = 40;
@@ -45,6 +45,8 @@ int main(int argc, char* argv[])
     sp.gui_speedup = 5; // speed up gui compared to real time
     // sp.gui_draw_every = 5; // update gui every x updates
     sp.gui_zoom = 20; // zoom in on gui
+    sp.gui_draw_cells = true;
+    sp.gui_draw_footprints = true;
 
     sp.verbose = false;
 
@@ -231,7 +233,7 @@ int main(int argc, char* argv[])
         printf("Try opening a GUI window...\n");
         sim.reset();
 
-        Fl_Window win(500, 500, "MiniStage");
+        Fl_Window win(700, 700, "MiniStage");
         Canvas gui = Canvas(&sim, 0,0, win.w(), win.h());
 
         win.resizable(&gui);
@@ -280,6 +282,8 @@ int main(int argc, char* argv[])
         sp_test.gui_speedup = 5; // speed up gui compared to real time
         // sp_test.gui_draw_every = 5; // update gui every x updates
         sp_test.gui_zoom = 20; // zoom in on gui
+        sp.gui_draw_cells = true;
+        sp.gui_draw_footprints = true;
 
         sp_test.verbose = false;
 

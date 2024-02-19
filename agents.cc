@@ -96,6 +96,18 @@ void Agent::position_update() {
         set_pos(Pose(x > -s/2 ? x : x + s, y > -s/2 ? y : y + s, cur_pos->z, cur_pos->a));
         }
     }
+    
+    if(sp->gui_draw_footprints & (fmod(sd->sim_time, 0.5) <= 0.0001)) {
+        update_trail();
+    }
+}
+
+// update trail storing previous positions
+void Agent::update_trail() {
+    trail.push_back(get_pos());
+    if(trail.size() > 20) {
+        trail.pop_front();
+    }
 }
 
 // draw
@@ -127,6 +139,22 @@ void Agent::draw() {
         glEnd();
 
     glPopMatrix();
+
+    // draw trail
+    if(sp->gui_draw_footprints) {
+        for (Pose p : trail) {
+            glPushMatrix();
+            pose_shift(p);
+                // draw disk at footprint position
+                glColor4f(.5, .5, .5, .3); // gray
+                GLUquadric *robot_pos = gluNewQuadric();
+                gluQuadricDrawStyle(robot_pos, GLU_FILL);
+                gluDisk(robot_pos, 0, 0.15, 20, 1);
+                gluDeleteQuadric(robot_pos);
+            glPopMatrix();
+        }
+    }
+    
 }
 
 

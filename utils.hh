@@ -67,6 +67,7 @@ typedef struct {
     // for gui
     float gui_speedup;
     int gui_zoom;
+    bool gui_draw_cells, gui_draw_footprints;
     // bool gui_ind_colors; // todo
 
 } sim_params;
