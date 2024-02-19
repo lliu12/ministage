@@ -18,40 +18,31 @@ add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
 # add the executable
-set(SOURCES 
-        run_ministage.cc 
-        simulation_data.cc 
-        agents.cc
-        simulation_manager.cc
-        canvas.cc)
-    
-add_executable(Run_MiniStage ${SOURCES})
+add_executable(Run_MiniStage run_ministage.cc)
+add_executable(MiniStage_Results get_ministage_results.cc)
+
+# add source code library
+add_subdirectory(src)
 
 # find FLTK
-# include(findFLTK)
 FIND_PACKAGE(FLTK REQUIRED)
 
 # Check if FLTK is found
 if(FLTK_FOUND)
     message(STATUS "FLTK found.") # Version: ${FLTK_VERSION}")
-    include_directories(${FLTK_INCLUDE_DIR})
-    target_link_libraries(Run_MiniStage ${FLTK_LIBRARIES})
 else()
     message(FATAL_ERROR "FLTK not found. Please make sure it is installed.")
 endif()
 
+include_directories(${FLTK_INCLUDE_DIR} src)
+target_link_libraries(Run_MiniStage PUBLIC src ${FLTK_LIBRARIES})
+target_link_libraries(MiniStage_Results PUBLIC src ${FLTK_LIBRARIES})
 
 
-# # # TODO 3: Use target_link_libraries to link the library to our executable
-# target_link_libraries(Run_MiniStage PUBLIC MiniStage)
 
 # # add the binary tree to the search path for include files
 # target_include_directories(Run_MiniStage PUBLIC
 #     "${PROJECT_BINARY_DIR}"
 #     # "${PROJECT_SOURCE_DIR}/subdirectory_name
 #     )
-
-
-# add_executable(test ${SOURCES})
-
 
