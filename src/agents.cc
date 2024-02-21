@@ -23,7 +23,9 @@ Agent::Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data) {
     color = Color::RandomColor();
     reset();
 }
-Agent::Agent() {}
+Agent::Agent() {
+    delete cur_pos;
+}
 
 // Destructor
 Agent::~Agent(void){}

@@ -30,7 +30,10 @@ SimulationManager::SimulationManager(sim_params sim_params) {
 }
 
 // Destructor
-SimulationManager::~SimulationManager(void){}
+SimulationManager::~SimulationManager(){
+    delete sd;
+    for (Agent *a : agents) { delete a; }
+}
 
 
 void SimulationManager::update() {
@@ -45,7 +48,6 @@ void SimulationManager::update() {
     // update all agent positions
     // working with the assumption that they should not collide in this one step due to sufficient stop conditions
     for (Agent *a : agents) { a->position_update(); }
-
 }
 
 

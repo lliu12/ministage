@@ -15,7 +15,15 @@ SimulationData::SimulationData(sim_params *sim_params)
 }
 
 // Destructor
-SimulationData::~SimulationData(){}
+SimulationData::~SimulationData() {
+
+    for (const auto& row : cells) {
+        for (Cell *c : row) {
+            delete c;
+        }
+    }
+    delete overflow_cell;
+}
 
 // Reset
 void SimulationData::reset() {
