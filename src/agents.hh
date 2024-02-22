@@ -22,6 +22,9 @@ class Agent {
     // store recent poses
     std::deque<Pose> trail;
 
+    // store information about neighbors detected in FOV
+    std::vector<sensor_result> sensed;
+
     // current speeds
     double fwd_speed; // meters per second
     double turn_speed; // radians per second

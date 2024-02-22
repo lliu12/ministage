@@ -57,6 +57,8 @@ void Agent::reset() {
     fwd_speed = 0;
     turn_speed = 0;
     set_pos(random_pos());
+    trail.clear();
+    sensed.clear();
 }
 
 // Function to set new position
@@ -198,7 +200,7 @@ void GoalAgent::sensing_update() {
         goal_updates();
     }
 
-    std::vector <sensor_result> sensed = sd->sense(id, get_pos());
+    sensed = sd->sense(id, get_pos());
     stop = sensed.size() > 0; // agent will stop if any neighbor was sensed in vision cone
 
     decision_update();

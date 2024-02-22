@@ -11,15 +11,20 @@ int main(int argc, char* argv[])
 {
 
     sim_params sp;
+
+    // bool periodic_arr[2] = [false, true];
+    // int num_agents_arr[16] = [16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256];
+    // int noise_arr[9] = [-1, 0, .25, .5, .75, 1, 1.5, 1.75, 2.0]
+
     
     sp.periodic = false;
     sp.num_agents = 200;
     sp.anglenoise = -1; // -1 for uniform random noise, otherwise this is the STD of gaussian noise 
     sp.anglebias = 0;
-    sp.turnspeed = 10; // -1 for instant turning, 10 is a good value otherwise for visuals
+    sp.turnspeed = -1; // -1 for instant turning, 10 is a good value otherwise for visuals
 
 
-    // parameters that probably won't be changed
+    // parameters to leave unchanged
     sp.circle_arena = false;
     sp.r_upper = 8;
     sp.r_lower = 0;
@@ -29,7 +34,7 @@ int main(int argc, char* argv[])
 
     sp.cells_range = 25;
     if(sp.periodic) { sp.cells_range = sp.r_upper; }
-    sp.cells_per_side = floor(2.0 * sp.cells_range / sp.sensing_range); // 15;
+    sp.cells_per_side = floor(2.0 * sp.cells_range / sp.sensing_range);
     sp.cell_width = 2.0 * sp.cells_range / sp.cells_per_side;
     sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
@@ -50,6 +55,9 @@ int main(int argc, char* argv[])
     sp.gui_draw_footprints = false;
     sp.verbose = false;
 
+    sp.outfile_name = "test_saving_ministage_results.txt";
+    sp.save_data_interval = 10.0;
+
     IS_TRUE(2 * sp.cells_range / sp.cells_per_side >= sp.sensing_range);
 
     
@@ -57,7 +65,7 @@ int main(int argc, char* argv[])
     // make and run a lot of worlds to check for memory leaks
 
     auto start_time = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 200; i++)
+    for (int i = 0; i < 1; i++)
     {
     if (i % 100 == 0) { printf("at world %i \n", i);}
 

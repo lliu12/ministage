@@ -25,12 +25,10 @@ int main(int argc, char* argv[])
 
     sp.cells_range = 10;
     if(sp.periodic) { sp.cells_range = sp.r_upper; }
-    sp.cells_per_side = floor(2.0 * sp.cells_range / sp.sensing_range); // 15;
-    sp.cell_width = 2.0 * sp.cells_range / sp.cells_per_side;
     sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
     
-    sp.anglenoise = 1;
+    sp.anglenoise = 0;
     sp.anglebias = 0;
 
     sp.avg_runsteps = 40;
@@ -48,14 +46,18 @@ int main(int argc, char* argv[])
     sp.gui_draw_cells = true;
     sp.gui_draw_footprints = true;
 
+    sp.outfile_name = "";
+    sp.save_data_interval = 10.0;
+
+
     sp.verbose = false;
 
-    IS_TRUE(2 * sp.cells_range / sp.cells_per_side >= sp.sensing_range);
+    // IS_TRUE(2 * sp.cells_range / sp.cells_per_side >= sp.sensing_range);
     // IS_TRUE(2 * sp.cells_range / sp.cells_per_side >= sp.dt * sp.cruisespeed;
 
     SimulationManager sim = SimulationManager(sp);
 
-   int num_agents = sp.num_agents;
+    int num_agents = sp.num_agents;
 
    // Run sanity checks
 

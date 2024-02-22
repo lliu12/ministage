@@ -63,7 +63,7 @@ void Canvas::draw() {
     // update simulation
     if (!paused) { 
         sim->update(); 
-        // keep resetting simulation (to test reset functions)
+        // // keep resetting simulation (to test reset functions)
         // if (sim->sd->sim_time > 60) {
         //     sim->reset();
         // }

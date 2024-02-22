@@ -70,6 +70,10 @@ typedef struct {
     bool gui_draw_cells, gui_draw_footprints;
     // bool gui_ind_colors; // todo
 
+    // for saving data
+    float save_data_interval; // leave as empty string to not save data
+    std::string outfile_name;
+
 } sim_params;
 
 

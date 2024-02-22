@@ -6,6 +6,10 @@
 #include <set>
 #include <vector>
 #include <fstream>
+#include <cstdlib>
+#include <stdlib.h>
+#include <string.h>
+#include <iomanip>
 
 #include "random.hh"
 #include "agents.hh"
@@ -24,11 +28,13 @@ class SimulationManager {
     SimulationData *sd;
     /** Pointers to all the agents in this world. */
     std::vector <Agent *> agents;
+    std::ofstream outfile;
 
     void update();
     void reset();
     void run_trials(int trials, double trial_length);
-    void run_trial(double trial_length);
+    void run_trial(double trial_length, int trial_id);
+    void save_data(int trial_id);
 };
 
 
