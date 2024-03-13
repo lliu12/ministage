@@ -62,37 +62,16 @@ bool SimulationData::lty::operator()(const Agent *a, const Agent *b) const
 
 // update fields
 void SimulationData::update() {
-    // small optimization: if everyone was blocked last step, no need to re-sort
-    bool all_blocked_helper = true;
-    for (Agent *a : agents) 
-    { 
-        if (a->fwd_speed != 0) {
-            all_blocked_helper = false;
-            break;
-        }
+    // sort the position lists
+    if (sp->use_sorted_agents) {
+        std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
+        std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
     }
 
-    // if anyone has moved, or the sim has just begun, proceed with the full update
-    if (!all_blocked_helper || sim_time == 0) {
-        // sort the position lists
-        if (sp->use_sorted_agents) {
-            std::sort(agents_byx_vec.begin(), agents_byx_vec.end(), ltx());
-            std::sort(agents_byy_vec.begin(), agents_byy_vec.end(), lty());
-        }
-
-        // update cell occupancy
-        // a performance update for later: since agents move slowly, 
-        if (sp->use_cell_lists) {
-            populate_cell_lists();
-        }
-    }
-    else {
-        // print out first timestep everyone is blocked, 
-        // but note that the system could become unblocked again due to in-place rotations
-        if (sp->verbose && !all_stopped) {
-            printf("everyone is blocked at time %f\n", sim_time);
-        }
-        all_stopped = true;
+    // update cell occupancy
+    // a performance update for later: since agents move slowly, 
+    if (sp->use_cell_lists) {
+        populate_cell_lists();
     }
 
     sim_time += sp->dt;

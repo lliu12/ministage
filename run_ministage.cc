@@ -13,14 +13,14 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 10;
+    sp.num_agents = 64;
 
-    sp.periodic = true;
+    sp.periodic = false;
     sp.circle_arena = false;
     sp.r_upper = 8;
     sp.r_lower = 0;
 
-    sp.sensing_angle = M_PI * 3.0 / 4.0;
+    sp.sensing_angle = M_PI * 2.0 / 3.0;
     sp.sensing_range = 1;
 
     sp.cells_range = 10;
@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
     
-    sp.anglenoise = 0;
+    sp.anglenoise = 1;
     sp.anglebias = 0;
 
     sp.avg_runsteps = 40;

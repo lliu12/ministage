@@ -354,7 +354,6 @@ class SimulationData {
 
         sim_params *sp;
         double sim_time;
-        bool all_stopped; 
 
         /** maintain a vector of agents sorted by pose.x, for quickly finding neighbors */
         std::vector<Agent *> agents_byx_vec;
