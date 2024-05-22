@@ -109,7 +109,7 @@ void Agent::position_update() {
 // update trail storing previous positions
 void Agent::update_trail() {
     trail.push_back(get_pos());
-    if(trail.size() > 20) {
+    if(trail.size() > 40) {
         trail.pop_front();
     }
 }
@@ -135,12 +135,12 @@ void Agent::draw() {
                     rtod(-sp->sensing_angle)); // sweep angle
         gluDeleteQuadric(fov);
 
-        // draw heading
-        glBegin(GL_LINES);
-            glColor4f(0, 0, 1, 1); 
-            glVertex2f(0,0);              // x, y
-            glVertex2f(sp->sensing_range, 0);
-        glEnd();
+        // // draw heading
+        // glBegin(GL_LINES);
+        //     glColor4f(0, 0, 1, 1); 
+        //     glVertex2f(0,0);              // x, y
+        //     glVertex2f(sp->sensing_range, 0);
+        // glEnd();
 
     glPopMatrix();
 
@@ -262,34 +262,34 @@ void GoalAgent::draw() {
 
 
 ///////////////////////////////////////////////////////////////////////////
-// Define NoiseAgent class functions
+// Define ConstNoiseAgent class functions
 
 
-NoiseAgent::NoiseAgent(int agent_id, sim_params *sim_params, SimulationData *sim_data) 
+ConstNoiseAgent::ConstNoiseAgent(int agent_id, sim_params *sim_params, SimulationData *sim_data) 
     : GoalAgent(agent_id, sim_params, sim_data) {}
 
-NoiseAgent::NoiseAgent() : GoalAgent() {}
+ConstNoiseAgent::ConstNoiseAgent() : GoalAgent() {}
 
 // Destructor
-NoiseAgent::~NoiseAgent(void){}
+ConstNoiseAgent::~ConstNoiseAgent(void){}
 
-void NoiseAgent::reset() {
+void ConstNoiseAgent::reset() {
     GoalAgent::reset();
     current_phase_count = 0;
 }
 
-void NoiseAgent::goal_updates() {
+void ConstNoiseAgent::goal_updates() {
     GoalAgent::goal_updates();
     current_phase_count = 0;
 }
 
 // Determine angle for robot to steer in (after adding noise)
-double NoiseAgent::get_travel_angle() {
+double ConstNoiseAgent::get_travel_angle() {
   return angle_to_goal() + (sp->anglenoise == -1 ? Random::get_unif_double(-M_PI, M_PI) : Random::get_normal_double(sp->anglebias, sp->anglenoise));
 }
 
 // Update the robot's intended forward and turning speed
-void NoiseAgent::decision_update() {
+void ConstNoiseAgent::decision_update() {
     // check if current run phase is over
     if (current_phase_count >= runsteps) {
         current_phase_count = 0;
@@ -324,4 +324,34 @@ void NoiseAgent::decision_update() {
         turn_speed = sp->turnspeed * a_error;
     }
     current_phase_count++;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////
+// Define NoiseAgent class functions
+
+
+NoiseAgent::NoiseAgent(int agent_id, sim_params *sim_params, SimulationData *sim_data) 
+    : ConstNoiseAgent(agent_id, sim_params, sim_data) {}
+
+NoiseAgent::NoiseAgent() : ConstNoiseAgent() {}
+
+// Destructor
+NoiseAgent::~NoiseAgent(void){}
+
+// Determine angle for robot to steer in (after adding noise)
+double NoiseAgent::get_travel_angle() {
+    double without_noise = angle_to_goal();
+    double with_noise = ConstNoiseAgent::get_travel_angle();
+
+    if (!(sp->conditional_noise) || stop) { // unless conditional noise is on and robot is free to move,
+    // add noise to motion with noise_prob probability
+        if (Random::get_unif_double(0, 1) <= sp->noise_prob) {
+            return with_noise;
+        }
+    }
+
+    // otherwise head directly to goal
+    return without_noise;
 }

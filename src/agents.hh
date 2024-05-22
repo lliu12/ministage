@@ -102,18 +102,18 @@ class GoalAgent : public Agent {
 };
 
 
-// A robot which navigates to randomly generated individual goals, sometimes adding noise to its motion
-class NoiseAgent : public GoalAgent {
+// A robot which navigates to randomly generated individual goals, adding noise to the direction of its motion every time it chooses a new direction
+class ConstNoiseAgent : public GoalAgent {
     public:
     int current_phase_count, runsteps; // time so far spent running or tumbling, total length of a run or tumble period
     double travel_angle; // amount of noise and bias to add to random angles
 
     //// Constructor
-    NoiseAgent(int agent_id, sim_params *sim_params, SimulationData *sim_data);
-    NoiseAgent();
+    ConstNoiseAgent(int agent_id, sim_params *sim_params, SimulationData *sim_data);
+    ConstNoiseAgent();
 
     //// Destructor
-    ~NoiseAgent();
+    ~ConstNoiseAgent();
 
     //// Reset robot data for a new trial
     virtual void reset() override;
@@ -130,6 +130,25 @@ class NoiseAgent : public GoalAgent {
     virtual void goal_updates() override;
 
 };
+
+// A robot which navigates to randomly generated individual goals, sometimes adding noise to the direction of its motion
+class NoiseAgent : public ConstNoiseAgent {
+    public:
+    int current_phase_count, runsteps; // time so far spent running or tumbling, total length of a run or tumble period
+    double travel_angle; // amount of noise and bias to add to random angles
+
+    //// Constructor
+    NoiseAgent(int agent_id, sim_params *sim_params, SimulationData *sim_data);
+    NoiseAgent();
+
+    //// Destructor
+    ~NoiseAgent();
+
+    //// Determine angle for robot to steer in (after adding noise)
+    virtual double get_travel_angle() override;
+
+};
+
 
 
 #endif

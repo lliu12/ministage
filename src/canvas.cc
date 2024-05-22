@@ -6,7 +6,7 @@ Canvas::Canvas(SimulationManager *simulation, int x, int y, int width, int heigh
     _scale = sim->sp.gui_zoom;
     _x = 0;
     _y = 0;
-    paused = false;
+    paused = true;
 }
 
 Canvas::~Canvas() {

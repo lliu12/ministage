@@ -1,4 +1,5 @@
-// Mar 13, 2024: I return to square arena, instant turning, and add more noise data points to sample. I also update cells_range to 50 for faster simulation.
+// May 22, 2024. I add conditional noise and only adding noise a percentage of the time.
+// Script is modified from previous runs because the structure of the parameters we want to sweep through is different now.
 
 #include <chrono>
 #include "simulation_manager.hh"
@@ -16,15 +17,18 @@ int main(int argc, char* argv[])
 
     std::vector<bool> periodic_arr{true, false};
     std::vector<int> num_agents_arr = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256};
-    std::vector<float> noise_arr = {-1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. , 1.1, 1.2,
-       1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2. };
+
+
+    std::vector<float> gaussian_noise_arr = {-1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. , 1.1, 1.2,
+       1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2. }; // run these all with conditional noise off, anglenoise varies, noise prob = 1
+
+    std::vector<float> noise_prob_arr = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.}; // run these all with conditional noise off, anglenoise = -1 (unif noise), noise prob varies
+    
+    // finally do a run with anglenoise = -1, conditional noise on, noise prob = 1
 
     
-    // sp.periodic = false;
-    // sp.num_agents = 200;
-    // sp.anglenoise = -1; // -1 for uniform random noise, otherwise this is the STD of gaussian noise 
-    // sp.anglebias = 0;
-    sp.outfile_name = "20240313_out.txt";
+    sp.anglebias = 0;
+    sp.outfile_name = "20240522_out.txt";
     sp.save_data_interval = 100.0;
     sp.turnspeed = -1; // -1 for instant turning, 10 is a good value otherwise for visuals
     sp.circle_arena = true;
@@ -63,15 +67,20 @@ int main(int argc, char* argv[])
 
     IS_TRUE(2 * sp.cells_range / sp.cells_per_side >= sp.sensing_range);
 
-    int total_worlds = periodic_arr.size() * num_agents_arr.size() * noise_arr.size();
+    int total_worlds = periodic_arr.size() * num_agents_arr.size() * (gaussian_noise_arr.size() + noise_prob_arr.size() + 1);
     int complete = 0;
     auto all_start_time = std::chrono::high_resolution_clock::now();
+
+    printf("Running constant Gaussian noise worlds...");
     for (bool p : periodic_arr) {
         for (int num : num_agents_arr) {
-            for (float noise : noise_arr) {
+            for (float noise : gaussian_noise_arr) {
                 sp.periodic = p;
                 sp.num_agents = num;
                 sp.anglenoise = noise;
+                sp.noise_prob = 1.0;
+                sp.conditional_noise = false;
+                sp.addtl_data = "constant noise";
 
                 auto this_start_time = std::chrono::high_resolution_clock::now();
 
@@ -89,6 +98,62 @@ int main(int argc, char* argv[])
             }
         }
     }
+
+
+    printf("Running noise probability worlds...");
+    for (bool p : periodic_arr) {
+        for (int num : num_agents_arr) {
+            for (float noise_prob : noise_prob_arr) {
+                sp.periodic = p;
+                sp.num_agents = num;
+                sp.anglenoise = -1;
+                sp.noise_prob = noise_prob;
+                sp.conditional_noise = false;
+                sp.addtl_data = "noise probability";
+
+                auto this_start_time = std::chrono::high_resolution_clock::now();
+
+                SimulationManager sim = SimulationManager(sp);
+                sim.run_trials(num_trials, 1200);
+
+
+                auto this_end_time = std::chrono::high_resolution_clock::now();
+                auto this_duration = std::chrono::duration_cast<std::chrono::seconds>(this_end_time - this_start_time);
+
+                complete += 1;
+                printf("Just ran World %i / %i in %lli seconds: periodic %i, robots %i, noise prob %f \n", complete, total_worlds, this_duration.count(), p, num, noise_prob);
+                
+
+            }
+        }
+    }
+
+
+    printf("Running conditional noise worlds...");
+    for (bool p : periodic_arr) {
+        for (int num : num_agents_arr) {
+            sp.periodic = p;
+            sp.num_agents = num;
+            sp.anglenoise = -1;
+            sp.noise_prob = 1;
+            sp.conditional_noise = true;
+            sp.addtl_data = "conditional noise";
+
+            auto this_start_time = std::chrono::high_resolution_clock::now();
+
+            SimulationManager sim = SimulationManager(sp);
+            sim.run_trials(num_trials, 1200);
+
+
+            auto this_end_time = std::chrono::high_resolution_clock::now();
+            auto this_duration = std::chrono::duration_cast<std::chrono::seconds>(this_end_time - this_start_time);
+
+            complete += 1;
+            printf("Just ran World %i / %i in %lli seconds: periodic %i, robots %i, conditional noise \n", complete, total_worlds, this_duration.count(), p, num);
+        }
+    }
+
+
     auto all_end_time = std::chrono::high_resolution_clock::now();
     auto all_duration = std::chrono::duration_cast<std::chrono::seconds>(all_end_time - all_start_time);
     std::cout << "\nTime taken to run all trials: " << all_duration.count() << " seconds" << std::endl;

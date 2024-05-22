@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 64;
+    sp.num_agents = 4;
 
     sp.periodic = false;
     sp.circle_arena = false;
@@ -23,15 +23,17 @@ int main(int argc, char* argv[])
     sp.sensing_angle = M_PI * 2.0 / 3.0;
     sp.sensing_range = 1;
 
-    sp.cells_range = 10;
+    sp.cells_range = 8;
     if(sp.periodic) { sp.cells_range = sp.r_upper; }
     sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
     
-    sp.anglenoise = 1;
+    sp.anglenoise = -1;
     sp.anglebias = 0;
+    sp.noise_prob = 1.0;
+    sp.conditional_noise = true; 
 
-    sp.avg_runsteps = 40;
+    sp.avg_runsteps = 30;
     sp.randomize_runsteps = true;
 
     sp.cruisespeed = 0.6;
@@ -40,11 +42,12 @@ int main(int argc, char* argv[])
 
     sp.dt = .1;
 
-    sp.gui_speedup = 5; // speed up gui compared to real time
+    sp.gui_speedup = 6; // speed up gui compared to real time
     // sp.gui_draw_every = 5; // update gui every x updates
     sp.gui_zoom = 20; // zoom in on gui
     sp.gui_draw_cells = true;
     sp.gui_draw_footprints = true;
+    
 
     sp.outfile_name = "";
     sp.save_data_interval = 10.0;
@@ -271,6 +274,8 @@ int main(int argc, char* argv[])
         
         sp_test.anglenoise = 0;
         sp_test.anglebias = 0;
+        sp.noise_prob = 1.0;
+        sp.conditional_noise = false; 
 
         sp_test.avg_runsteps = 40;
         sp_test.randomize_runsteps = true;

@@ -64,6 +64,11 @@ typedef struct {
     bool randomize_runsteps;
     float turnspeed; 
 
+    // for only applying noise sometimes
+    float noise_prob; // At each step where we draw a new direction, apply anglenoise with this probability
+    bool conditional_noise; // If true, only apply noise (with noise_prob) if the robot is currently blocked
+
+
     // for gui
     float gui_speedup;
     int gui_zoom;
@@ -73,6 +78,7 @@ typedef struct {
     // for saving data
     float save_data_interval; // leave as empty string to not save data
     std::string outfile_name;
+    std::string addtl_data; // optional label or additional data to save with this simulation
 
 } sim_params;
 
@@ -250,11 +256,12 @@ class Cell {
     // draw on canvas
     void draw() {
         glBegin(GL_LINE_LOOP);               // Draw outline of cell, with no fill
-        if (is_outer_cell) {
+        // if (is_outer_cell) {
+        if (false) {
             glColor4f(0.1, 0.7, 0.2, 0.2);    // Green outline
         }
         else {
-            glColor4f(0.0f, 1.0f, 0.0f, 0.2);    // Green outline
+            glColor4f(0.0f, 0.9, 0.0f, 0.2);    // different Green outline
         }
         
         glVertex2f(xmin, ymin);              // x, y

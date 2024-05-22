@@ -27,7 +27,7 @@ SimulationData::~SimulationData() {
 
 // Reset
 void SimulationData::reset() {
-    all_stopped = false;
+    // all_stopped = false;
     sim_time = 0;
 
     // ensure agent lists are sorted

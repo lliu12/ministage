@@ -16,7 +16,6 @@ SimulationManager::SimulationManager(sim_params sim_params) {
     sp.cells_per_side = floor(2.0 * sp.cells_range / sp.sensing_range);
     sp.cell_width = 2.0 * sp.cells_range / sp.cells_per_side;
 
-
     // Initialize Simulation Data
     sd = new SimulationData(&sp);
 
@@ -105,9 +104,9 @@ void SimulationManager::save_data(int trial_id) {
         if (!a->stop) {
             outfile << std::to_string(trial_id) + std::string(",") +
                 std::to_string(sp.periodic) + std::string(",") +
-                std::to_string(sp.num_agents) + std::string(",") +
-                std::to_string(sp.anglenoise) + std::string(",") +
-                std::to_string(sd->sim_time) + std::string(",") +
+                std::to_string(sp.num_agents) + std::string(",")
+                << sp.anglenoise << std::string(",")
+                << sd->sim_time << std::string(",") +
                 std::to_string(a->id) + std::string(",")
                 << a->get_pos().x << std::string(",")
                 << a->get_pos().y << std::string(",")
@@ -115,7 +114,8 @@ void SimulationManager::save_data(int trial_id) {
                 std::to_string(a->goal_birth_time) + std::string(",") +
                 std::to_string(a->goals_reached) + std::string(",") +
                 std::to_string(a->stop) + std::string(",") +
-                std::to_string(-1) + std::string(",")
+                std::to_string(-1) + std::string(",") +
+                sp.addtl_data + std::string(",")
                 << std::endl;
         }
 
@@ -128,9 +128,9 @@ void SimulationManager::save_data(int trial_id) {
             for (sensor_result other : a->sensed) {
                     outfile << std::to_string(trial_id) + std::string(",") +
                         std::to_string(sp.periodic) + std::string(",") +
-                        std::to_string(sp.num_agents) + std::string(",") +
-                        std::to_string(sp.anglenoise) + std::string(",") +
-                        std::to_string(sd->sim_time) + std::string(",") +
+                        std::to_string(sp.num_agents) + std::string(",")
+                        << sp.anglenoise << std::string(",")
+                        << sd->sim_time << std::string(",") +
                         std::to_string(a->id) + std::string(",")
                         << a->get_pos().x << std::string(",")
                         << a->get_pos().y << std::string(",")
@@ -138,7 +138,8 @@ void SimulationManager::save_data(int trial_id) {
                         std::to_string(a->goal_birth_time) + std::string(",") +
                         std::to_string(a->goals_reached) + std::string(",") +
                         std::to_string(a->stop) + std::string(",") +
-                        std::to_string(other.id) + std::string(",")
+                        std::to_string(other.id) + std::string(",") +
+                        sp.addtl_data + std::string(",")
                         << std::endl;
 
             }
