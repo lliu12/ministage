@@ -106,6 +106,7 @@ void SimulationManager::save_data(int trial_id) {
                 std::to_string(sp.periodic) + std::string(",") +
                 std::to_string(sp.num_agents) + std::string(",")
                 << sp.anglenoise << std::string(",")
+                << sp.noise_prob << std::string(",")
                 << sd->sim_time << std::string(",") +
                 std::to_string(a->id) + std::string(",")
                 << a->get_pos().x << std::string(",")
@@ -130,6 +131,7 @@ void SimulationManager::save_data(int trial_id) {
                         std::to_string(sp.periodic) + std::string(",") +
                         std::to_string(sp.num_agents) + std::string(",")
                         << sp.anglenoise << std::string(",")
+                        << sp.noise_prob << std::string(",")
                         << sd->sim_time << std::string(",") +
                         std::to_string(a->id) + std::string(",")
                         << a->get_pos().x << std::string(",")
