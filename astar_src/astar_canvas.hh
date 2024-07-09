@@ -1,4 +1,4 @@
-#include "simulation_manager.hh"
+#include "astar_manager.hh"
 
 // FLTK Gui includes
 #include <FL/Fl.H>
@@ -17,7 +17,7 @@
 
 class Canvas : public Fl_Gl_Window {
     public:
-    Canvas(SimulationManager *simulation, int x, int y, int width, int height);
+    Canvas(AStarManager *simulation, int x, int y, int width, int height);
     ~Canvas();
 
     bool paused;
@@ -25,7 +25,7 @@ class Canvas : public Fl_Gl_Window {
     double _x, _y; 
     double _scale;
 
-    SimulationManager *sim;
+    AStarManager *sim;
 
     void draw() override;
     int handle(int event) override;

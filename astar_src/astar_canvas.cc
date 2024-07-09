@@ -112,10 +112,11 @@ int Canvas::handle(int event) {
                     paused = !paused;
 
                 case '.':
-                    if (paused) {
-                        sim->update();
-                        redraw();
-                    }
+                    return 1;
+                    // if (paused) {
+                    //     sim->update();
+                    //     redraw();
+                    // }
             }
             return 1;
     }

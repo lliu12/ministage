@@ -1,5 +1,5 @@
-#ifndef MINISTAGE_H
-#define MINISTAGE_H
+#ifndef ASTAR_MANAGER
+#define ASTAR_MANAGER
 
 // #include <algorithm>
 #include <cmath>
@@ -12,23 +12,27 @@
 #include <iomanip>
 
 #include "../random.hh"
-#include "agents.hh"
-#include "utils.hh"
+#include "astar_utils.hh"
+#include "../shared_utils.hh"
 
 
 // A simulation instance
-class SimulationManager {
+class AStarManager {
     public:
     // Constructor
-    SimulationManager(sim_params sim_params);
+    AStarManager(sim_params sim_params);
     // Destructor
-    ~SimulationManager();
+    ~AStarManager();
 
     sim_params sp;
-    SimulationData *sd;
-    /** Pointers to all the agents in this world. */
-    std::vector <Agent *> agents;
-    std::ofstream outfile;
+
+    // 2D vector of pointers to sites
+    std::vector<std::vector<Site *>> sites;
+
+    // SimulationData *sd;
+    // /** Pointers to all the agents in this world. */
+    // std::vector <Agent *> agents;
+    // std::ofstream outfile;
 
     void update();
     void reset();

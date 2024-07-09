@@ -2,7 +2,7 @@
 #define AGENTS_H
 
 #include <cmath>
-#include "random.hh"
+#include "../random.hh"
 #include "utils.hh"
 #include <deque>
 
