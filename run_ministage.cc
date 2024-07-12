@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 
     sp.num_agents = 48;
 
-    sp.periodic = false;
+    sp.periodic = true;
     sp.circle_arena = false;
     sp.r_upper = 8;
     sp.r_lower = 0;

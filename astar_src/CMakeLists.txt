@@ -2,7 +2,9 @@
 # file(GLOB LIB_SOURCES "src/*.cc")
 
 set(SOURCES 
-        astar_manager.cc)
+        astar_manager.cc
+	astar_canvas.cc
+	../shared_utils.cc)
 
 # find FLTK
 FIND_PACKAGE(FLTK REQUIRED)

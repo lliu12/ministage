@@ -7,6 +7,7 @@
 #include <vector>
 #include <set>
 #include "../random.hh"
+#include "../shared_utils.hh"
 
 // FLTK Gui includes
 #include <FL/fl_draw.H>
@@ -30,12 +31,13 @@ typedef struct {
     int num_agents;
 
     bool periodic; ///< use periodic boundary conditions
+    bool diags;
     meters_t r_upper; /// the length of the arena is 2 * r_upper, and the x and y coordinates range from -r_upper to +r_upper
 
     // // neighbor search settings
     // meters_t cells_range; // coordinate range covered by cells with side length < sensing range
-    int sites_per_side; // split the (r_upper)^2 square region into (sites_per_side)^2 cells for tracking agents in
-    float site_dist; // distance between neighboring sites
+    int cells_per_side; // split the (r_upper)^2 square region into (sites_per_side)^2 cells for tracking agents in
+    float cell_width; // distance between neighboring sites
 
     float dt; // how much to update by during each step
     bool verbose;

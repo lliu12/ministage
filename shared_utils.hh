@@ -7,16 +7,7 @@
 #include <vector>
 #include <set>
 #include "random.hh"
-
-// FLTK Gui includes
-#include <FL/fl_draw.H>
-#include <FL/gl.h> // FLTK takes care of platform-specific GL stuff
-// except GLU
-#ifdef __APPLE__
-#include <OpenGL/glu.h>
-#else
-#include <GL/glu.h>
-#endif
+#include <stdexcept>
 
 // Units
 
@@ -25,7 +16,6 @@ typedef double meters_t;
 
 /** Radians: unit of angle */
 typedef double radians_t;
-
 
 
 // Utility Functions
@@ -140,52 +130,12 @@ class Pose {
     meters_t Distance(const Pose &other) const { return hypot(x - other.x, y - other.y); }
 };
 
-
 // In periodic space, find the equivalent coordinates for Pose b (so b could be translated by 2 * r_upper) closest to Pose a
 // r_upper describes 1/2 the side length of periodic space
-inline Pose nearest_periodic(Pose a, Pose b, meters_t r_upper) {
-    float dx = b.x - a.x;
-    float dy = b.y - a.y;
-
-    bool dx_close = fabs(dx) <= r_upper;
-    bool dy_close = fabs(dy) <= r_upper;
-
-    Pose result = Pose(b.x, b.y, 0, 0);
-
-    if (dx_close && dy_close) {
-        return result;
-    }
-
-    if (!dx_close) {
-        result.x = (dx >= 0 ? b.x - 2 * r_upper : b.x + 2 * r_upper);
-    }
-
-    if (!dy_close) {
-        result.y = (dy >= 0 ? b.y - 2 * r_upper : b.y + 2 * r_upper);
-    }
-
-    return result;
-
-}
+Pose nearest_periodic(Pose a, Pose b, meters_t r_upper);
 
 // slower implementation of nearest_periodic function, kept for testing purposes
-inline Pose nearest_periodic_slow(Pose cur_pos, Pose goal_pos, meters_t r_upper) {
-    double s = 2 * r_upper;
-    double xs [9] = {-s, -s, -s, 0, 0, 0, s, s, s};
-    double ys [9] = {-s, 0, s, -s, 0, s, -s, 0, s};
-    int closest_pos = 0;
-    double closest_dist = std::numeric_limits<double>::infinity();
-    for ( int i=0; i<9; i++ ) {
-        Pose test_pos = Pose(goal_pos.x + xs[i], goal_pos.y + ys[i], 0, 0);
-        double dist = cur_pos.Distance(test_pos);
-        if (dist < closest_dist) {
-        closest_dist = dist;
-        closest_pos = i;
-        }
-    }
-    return Pose(goal_pos.x + xs[closest_pos], goal_pos.y + ys[closest_pos], 0, 0);
-}
-
+Pose nearest_periodic_slow(Pose cur_pos, Pose goal_pos, meters_t r_upper);
 
 
 // Color class
@@ -205,32 +155,18 @@ class Color {
 class SpaceUnit {
     public:
 
-    // // Constructor with three parameters specifying unit position and width
-    // SpaceUnit(float x_pos, float y_pos, float w) {
-    //     x = x_pos;
-    //     y = y_pos;
-    //     width = w;
-
-    //     xmin = x - width / 2;
-    //     xmax = x + width / 2;
-    //     ymin = y - width / 2;
-    //     ymax = y + width / 2;
-    // }
+    // Constructor with three parameters specifying unit position and width
+    SpaceUnit(meters_t xmin, meters_t y_min, meters_t w);
 
     // Constructor with four parameters specifying bounds of site
-    SpaceUnit(float x_min, float x_max, float y_min, float y_max) {
-        xmin = x_min;
-        xmax = x_max;
-        ymin = y_min;
-        ymax = y_max;
-    }
+    SpaceUnit(float x_min, float x_max, float y_min, float y_max);
 
     ~SpaceUnit(){}
 
-    // float x, y, width;
-    float xmin, xmax, ymin, ymax; // site bounds used for drawing
-    std::vector<SpaceUnit *> neighbors; // neighboring sites
-    bool is_outer; // site is on the outer boundary of the square arena and will need to be wrapped across to its neighbors for torus
+    meters_t xmin, ymin, width; // min x-coord of cell, min y-coord of cell, width of cell
+    meters_t xmin, xmax, ymin, ymax; // cell bounds
+    std::vector<SpaceUnit *> neighbors; // pointers to neighboring cells
+    bool is_outer; // unit is on the outer boundary of the square arena and will need to be wrapped across to its neighbors for torus
 
     // add neighbor
     void add_neighbor(SpaceUnit* nbr) {
@@ -238,25 +174,41 @@ class SpaceUnit {
     }
 
     // draw on canvas
-    void draw() {
-        glBegin(GL_LINE_LOOP);               // Draw outline of cell, with no fill
-        glColor4f(0.0f, 0.9, 0.0f, 0.2);    // different Green outline
-        
-        glVertex2f(xmin, ymin);              // x, y
-        glVertex2f(xmax, ymin);
-        glVertex2f(xmax, ymax);
-        glVertex2f(xmin, ymax);
-        glEnd();
-    }
+    void draw();
 
+    // TODO: draw connections to neighbors
+    // void draw_connections();
 };
 
 
 
-// // SpaceDiscretizer class
-// class SpaceDiscretizer {
+// SpaceDiscretizer class
+// Assumes the center of space is the origin
+class SpaceDiscretizer {
+    public:
 
-// };
+    int cells_per_side;
+    meters_t space_r; // radius aka 1/2 the side length of the space being discretized
+    meters_t cell_width;
+    bool periodic;
+    bool connect_diagonals; // whether to add diagonal neighbors. if false only add neighbors sharing sides.
+    std::vector<std::vector<SpaceUnit *>> cells;
+
+    SpaceDiscretizer(meters_t r_upper, int u_per_side, bool periodic, bool diags);
+    ~SpaceDiscretizer();
+
+    
+
+    private:
+    virtual void initialize_space();
+    // virtual void new_cell(meters_t xmin, meters_t ymin, meters_t width);
+    void cell_neighbor_helper(int idx, int idy, int nbr_idx, int nbr_idy);
+
+
+
+
+
+};
 
 
 

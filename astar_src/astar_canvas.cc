@@ -1,6 +1,6 @@
-#include "canvas.hh"
+#include "astar_canvas.hh"
 
-Canvas::Canvas(SimulationManager *simulation, int x, int y, int width, int height)
+Canvas::Canvas(AStarManager *simulation, int x, int y, int width, int height)
     : Fl_Gl_Window(x, y, width, height), sim(simulation)
 {
     _scale = sim->sp.gui_zoom;
@@ -33,15 +33,18 @@ void Canvas::draw() {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // White bg
     glClear(GL_COLOR_BUFFER_BIT);         // Clear the color buffer (background)
 
-    // Draw robots
-    for (Agent *a : sim->agents) {
-        a->draw();
-    }
+    // // Draw robots
+    // for (Agent *a : sim->agents) {
+    //     a->draw();
+    // }
 
     // Draw cells
-    if (sim->sp.use_cell_lists & sim->sp.gui_draw_cells) {
-        for (const auto& row : sim->sd->cells) {
-            for (Cell *c : row) {
+    if (sim->sp.gui_draw_cells) {
+        // printf("here 1 \n");
+        for (const auto& row : sim->space->cells) {
+            // printf("here 2 \n");
+            for (SpaceUnit *c : row) {
+                // printf("here 3 \n");
                 c->draw();
             }
         }

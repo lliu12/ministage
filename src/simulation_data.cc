@@ -141,7 +141,7 @@ void SimulationData::init_cell_lists() {
     }
 
     // populate each cell's vector of cell neighbors
-    // each cell initializes the linking for its neighbor to the top, right, and top-right diagonal (if that cell exists)
+    // each cell initializes the linking for its neighbor to the top, right, and upper diagonals (if those cells exists)
     for (int idx = 0; idx < sp->cells_per_side; idx++) {
         for (int idy = 0; idy < sp->cells_per_side; idy++) {
             // link to neighbor on right

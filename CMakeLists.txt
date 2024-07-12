@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set project name
-project(Run_MiniStage)
+project(MiniStage)
 
 # require c++ 17
 set(CMAKE_CXX_STANDARD 17)
@@ -17,15 +17,6 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
-# add the executable
-add_executable(Run_MiniStage run_ministage.cc)
-add_executable(MiniStage_Results get_ministage_results.cc)
-add_executable(Run_Astar run_astar.cc)
-
-# add source code library
-add_subdirectory(src)
-add_subdirectory(astar_src)
-
 # find FLTK
 FIND_PACKAGE(FLTK REQUIRED)
 
@@ -36,10 +27,19 @@ else()
     message(FATAL_ERROR "FLTK not found. Please make sure it is installed.")
 endif()
 
+# add the executable
+add_executable(Run_MiniStage run_ministage.cc shared_utils.cc)
+add_executable(MiniStage_Results get_ministage_results.cc shared_utils.cc)
+add_executable(Run_Astar run_astar.cc shared_utils.cc)
+
+# add source code library
+add_subdirectory(src)
+add_subdirectory(astar_src)
+
 include_directories(${FLTK_INCLUDE_DIR} src astar_src)
 target_link_libraries(Run_MiniStage PUBLIC src ${FLTK_LIBRARIES})
 target_link_libraries(MiniStage_Results PUBLIC src ${FLTK_LIBRARIES})
-target_link_libraries(Run_Astar PUBLIC astar_src ${FLTK_LIBEARIES})
+target_link_libraries(Run_Astar PUBLIC astar_src ${FLTK_LIBRARIES})
 
 
 
