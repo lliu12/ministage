@@ -62,44 +62,74 @@ typedef struct {
 } sim_params;
 
 
-// Site class
-// Represents a discrete site in space agents can be located at
-class Site {
-    public:
-    Site(float x_pos, float y_pos, float site_width) {
-        x = x_pos;
-        y = y_pos;
-        width = site_width;
+// // Site class
+// // Represents a discrete site in space agents can be located at
+// class Site {
+//     public:
+//     Site(float x_pos, float y_pos, float site_width) {
+//         x = x_pos;
+//         y = y_pos;
+//         width = site_width;
 
-        xmin = x - width / 2;
-        xmax = x + width / 2;
-        ymin = y - width / 2;
-        ymax = y + width / 2;
-    }
+//         xmin = x - width / 2;
+//         xmax = x + width / 2;
+//         ymin = y - width / 2;
+//         ymax = y + width / 2;
+//     }
 
-    ~Site(){}
+//     ~Site(){}
 
-    float x, y, width;
-    float xmin, xmax, ymin, ymax; // site bounds used for drawing
-    std::vector<Site *> neighbors; // neighboring sites
-    bool is_outer; // site is on the outer boundary of the square arena and will need to be wrapped across to its neighbors for torus
+//     float x, y, width;
+//     float xmin, xmax, ymin, ymax; // site bounds used for drawing
+//     std::vector<Site *> neighbors; // neighboring sites
+//     bool is_outer; // site is on the outer boundary of the square arena and will need to be wrapped across to its neighbors for torus
 
-    // add neighbor
-    void add_neighbor(Site* nbr) {
-        neighbors.push_back(nbr);
-    }
+//     // add neighbor
+//     void add_neighbor(Site* nbr) {
+//         neighbors.push_back(nbr);
+//     }
 
-    // draw on canvas
-    void draw() {
-        glBegin(GL_LINE_LOOP);               // Draw outline of cell, with no fill
-        glColor4f(0.0f, 0.9, 0.0f, 0.2);    // different Green outline
+//     // draw on canvas
+//     void draw() {
+//         glBegin(GL_LINE_LOOP);               // Draw outline of cell, with no fill
+//         glColor4f(0.0f, 0.9, 0.0f, 0.2);    // different Green outline
         
-        glVertex2f(xmin, ymin);              // x, y
-        glVertex2f(xmax, ymin);
-        glVertex2f(xmax, ymax);
-        glVertex2f(xmin, ymax);
-        glEnd();
-    }
+//         glVertex2f(xmin, ymin);              // x, y
+//         glVertex2f(xmax, ymin);
+//         glVertex2f(xmax, ymax);
+//         glVertex2f(xmin, ymax);
+//         glEnd();
+//     }
+
+// };
+
+
+// container for the x,y indices of a site in the SpaceDiscretizer array
+class SiteID {
+    public:
+    int idx, idy;
+
+    SiteID(int x, int y) : idx(x), idy(y) { /*empty*/}
+
+    SiteID() : idx(0), idy(0) { /*empty*/}
+
+    ~SiteID() {}
+
+    inline SiteID operator+(const SiteID &s) const { return SiteID(idx + s.idx, idy + s.idy); }
+
+    bool operator<(const SiteID &s) const { return ((idy * idy + idx * idx) < (s.idy * s.idy + s.idx * s.idx)); }
+
+    bool operator==(const SiteID &s) const { return (idx == s.idx && idy == s.idy); }
+
+    bool operator!=(const SiteID &s) const { return (idx != s.idx || idy != s.idy); }
+
+    float l1_norm(const SiteID &s) const { return abs(idx - s.idx) + abs(idy - s.idy); }
+
+    float l2_norm(const SiteID &s) const { return hypot(idx - s.idx, idy - s.idy); }
+
+    static SiteID random(int max_idx, int max_idy) { return SiteID(Random::get_unif_int(0, max_idx), Random::get_unif_int(0, max_idy)); }
+
+    virtual void print(const char *prefix) const { printf("%s site id [x index:%i y index:%i]\n", prefix, idx, idy); }
 
 };
 

@@ -13,6 +13,7 @@
 
 #include "../random.hh"
 #include "astar_utils.hh"
+#include "astar_agent.hh"
 #include "../shared_utils.hh"
 
 
@@ -25,15 +26,13 @@ class AStarManager {
     ~AStarManager();
 
     sim_params sp;
-
-    // 2D vector of pointers to sites
-    // std::vector<std::vector<Site *>> sites;
-
     SpaceDiscretizer *space;
+
+    // 3D RESERVATION TABLE
 
     // SimulationData *sd;
     // /** Pointers to all the agents in this world. */
-    // std::vector <Agent *> agents;
+    std::vector <AStarAgent *> agents;
     // std::ofstream outfile;
 
     void update();

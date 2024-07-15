@@ -4,6 +4,7 @@
 set(SOURCES 
         astar_manager.cc
 	astar_canvas.cc
+	astar_agent.cc
 	../shared_utils.cc)
 
 # find FLTK

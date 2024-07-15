@@ -6,7 +6,7 @@ Canvas::Canvas(AStarManager *simulation, int x, int y, int width, int height)
     _scale = sim->sp.gui_zoom;
     _x = 0;
     _y = 0;
-    paused = true;
+    paused = false;
 }
 
 Canvas::~Canvas() {
@@ -33,18 +33,18 @@ void Canvas::draw() {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // White bg
     glClear(GL_COLOR_BUFFER_BIT);         // Clear the color buffer (background)
 
-    // // Draw robots
-    // for (Agent *a : sim->agents) {
-    //     a->draw();
-    // }
+    // Draw robots
+    for (AStarAgent *a : sim->agents) {
+        // printf("%i \n", a->cur_pos.idx);
+        a->draw();
+        // a->get_pos_as_pose().Print("");
+    }
 
     // Draw cells
     if (sim->sp.gui_draw_cells) {
-        // printf("here 1 \n");
+
         for (const auto& row : sim->space->cells) {
-            // printf("here 2 \n");
             for (SpaceUnit *c : row) {
-                // printf("here 3 \n");
                 c->draw();
             }
         }

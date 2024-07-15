@@ -24,11 +24,10 @@ Agent::Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data) {
     reset();
 }
 Agent::Agent() {
-    delete cur_pos;
 }
 
 // Destructor
-Agent::~Agent(void){}
+Agent::~Agent(void){ delete cur_pos;}
 
 // Use rejection sampling to obtain a random point in a the ring between radius r_lower and r_upper (center at origin)
 // Or, if not in a circular arena, in the square with center at origin and side length 2 * r_upper

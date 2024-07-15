@@ -4,6 +4,7 @@
 #include <cmath>
 #include "../random.hh"
 #include "utils.hh"
+#include "../shared_utils.hh"
 #include <deque>
 
 class SimulationData;

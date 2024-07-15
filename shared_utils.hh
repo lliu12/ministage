@@ -9,6 +9,17 @@
 #include "random.hh"
 #include <stdexcept>
 
+// FLTK Gui includes
+#include <FL/fl_draw.H>
+#include <FL/gl.h> // FLTK takes care of platform-specific GL stuff
+// except GLU
+#ifdef __APPLE__
+#include <OpenGL/glu.h>
+#else
+#include <GL/glu.h>
+#endif
+
+
 // Units
 
 /** Metres: floating point unit of distance */
@@ -138,6 +149,22 @@ Pose nearest_periodic(Pose a, Pose b, meters_t r_upper);
 Pose nearest_periodic_slow(Pose cur_pos, Pose goal_pos, meters_t r_upper);
 
 
+// utility functions for drawing & converting coordinates
+inline void coord_shift(double x, double y, double z, double a) {
+    glTranslatef(x, y, z);
+    glRotatef(rtod(a), 0, 0, 1);
+}
+
+inline void pose_shift(const Pose &pose) {
+    coord_shift(pose.x, pose.y, pose.z, pose.a);
+}
+
+inline void pose_inverse_shift(const Pose &pose) {
+    coord_shift(0, 0, 0, -pose.a);
+    coord_shift(-pose.x, -pose.y, -pose.z, 0);
+}
+
+
 // Color class
 class Color {
     public:
@@ -163,7 +190,7 @@ class SpaceUnit {
 
     ~SpaceUnit(){}
 
-    meters_t xmin, ymin, width; // min x-coord of cell, min y-coord of cell, width of cell
+    meters_t x, y, width; // x-coord of middle of cell, y-coord of middle of cell, width of cell
     meters_t xmin, xmax, ymin, ymax; // cell bounds
     std::vector<SpaceUnit *> neighbors; // pointers to neighboring cells
     bool is_outer; // unit is on the outer boundary of the square arena and will need to be wrapped across to its neighbors for torus

@@ -8,8 +8,8 @@ int main(int argc, char* argv[])
 
     sim_params sp;
 
-    sp.num_agents = 1;
-    sp.periodic = false;
+    sp.num_agents = 2;
+    sp.periodic = true;
     sp.diags = false;
     sp.r_upper = 8;
 
@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 
     sp.dt = .1;
 
-    sp.gui_speedup = 6; // speed up gui compared to real time
+    sp.gui_speedup = 0.25; // speed up gui compared to real time
     // sp.gui_draw_every = 5; // update gui every x updates
     sp.gui_zoom = 20; // zoom in on gui
     sp.gui_draw_cells = true;

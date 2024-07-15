@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 48;
+    sp.num_agents = 4;
 
     sp.periodic = true;
     sp.circle_arena = false;
