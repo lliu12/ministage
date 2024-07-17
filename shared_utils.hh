@@ -174,7 +174,8 @@ class Color {
     ~Color() {};
 
     static Color RandomColor()
-    { return Color(drand48(), drand48(), drand48(), 1.0); }
+    // { return Color(drand48(), drand48(), drand48(), 1.0); } // seems to generate the same colors every run; could be a plus
+    { return Color(Random::get_unif_double(0, 1), Random::get_unif_double(0, 1), Random::get_unif_double(0, 1), 1.0);  }
 
 };
 

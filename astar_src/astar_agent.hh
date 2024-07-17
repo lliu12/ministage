@@ -14,9 +14,10 @@ class AStarAgent {
     SiteID cur_pos;
     sim_params *sp;
     SpaceDiscretizer *space;
+    Color color;
 
     // store recent poses
-    std::deque<Pose> trail;
+    std::deque<SiteID> trail;
 
     // plan for upcoming steps
     std::vector<SiteID> plan;
@@ -32,6 +33,7 @@ class AStarAgent {
     SiteID get_pos();
 
     Pose get_pos_as_pose();
+    Pose get_pos_as_pose(SiteID site_id);
 
     void update_trail();
 

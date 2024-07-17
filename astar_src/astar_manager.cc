@@ -19,9 +19,13 @@ AStarManager::AStarManager(sim_params sim_params) {
 // Destructor
 AStarManager::~AStarManager(){
     delete space;
+    for (AStarAgent *a : agents) { delete a; }
 }
 
 
 void AStarManager::update() {
-    for (AStarAgent *a : agents) { a->update(); }
+    for (AStarAgent *a : agents) { 
+        a->update(); 
+        // TODO: UPDATE RESERVATION TABLE FOR THIS AGENT? 
+    }
 }

@@ -5,15 +5,33 @@ AStarAgent::AStarAgent(int agent_id, sim_params *sim_params, SpaceDiscretizer *s
     sp = sim_params;
     space = sim_space;
     set_pos(random_pos());
+
+    if (sp->gui_random_colors) {
+        color = Color::RandomColor();
+    }
+
+    else { color =  Color(0.5, 0.5, 0.5, 0.8); }
 }
 
 
 AStarAgent::~AStarAgent() {}
 
-Pose AStarAgent::get_pos_as_pose() {
-    SpaceUnit *su = space->cells[cur_pos.idx][cur_pos.idy];
+// return current positoin
+SiteID AStarAgent::get_pos() {
+    return cur_pos;
+}
+
+// get coordinate position of a SiteID
+Pose AStarAgent::get_pos_as_pose(SiteID site_id) {
+    SpaceUnit *su = space->cells[site_id.idx][site_id.idy];
     return Pose(su->x, su->y, 0, 0);
 }
+
+// if no SiteID is specified, use agent's current SiteID
+Pose AStarAgent::get_pos_as_pose() {
+    return get_pos_as_pose(cur_pos);
+}
+
 
 
 // draw
@@ -22,28 +40,33 @@ void AStarAgent::draw() {
     pose_shift(get_pos_as_pose());
 
         // draw disk at robot position
-        glColor4f(.5, .5, .5, .8); // gray
+        // glColor4f(.5, .5, .5, .8); // gray
+        glColor4f(color.r, color.g, color.b, 0.8);
+
         GLUquadric *robot_pos = gluNewQuadric();
         gluQuadricDrawStyle(robot_pos, GLU_FILL);
-        gluDisk(robot_pos, 0, 0.15, 20, 1);
+        gluDisk(robot_pos, 0, 0.4, 20, 1);
         gluDeleteQuadric(robot_pos);
 
     glPopMatrix();
 
-    // // draw trail
-    // if(sp->gui_draw_footprints) {
-    //     for (Pose p : trail) {
-    //         glPushMatrix();
-    //         pose_shift(p);
-    //             // draw disk at footprint position
-    //             glColor4f(.5, .5, .5, .3); // gray
-    //             GLUquadric *robot_pos = gluNewQuadric();
-    //             gluQuadricDrawStyle(robot_pos, GLU_FILL);
-    //             gluDisk(robot_pos, 0, 0.15, 20, 1);
-    //             gluDeleteQuadric(robot_pos);
-    //         glPopMatrix();
-    //     }
-    // }
+    // draw trail
+    if(sp->gui_draw_footprints) {
+        for (SiteID site_id : trail) {
+            Pose p = get_pos_as_pose(site_id);
+            glPushMatrix();
+            pose_shift(p);
+                // draw disk at footprint position
+                // glColor4f(.5, .5, .5, .3); // gray
+                glColor4f(color.r, color.g, color.b, 0.3);
+                
+                GLUquadric *robot_pos = gluNewQuadric();
+                gluQuadricDrawStyle(robot_pos, GLU_FILL);
+                gluDisk(robot_pos, 0, 0.4, 20, 1);
+                gluDeleteQuadric(robot_pos);
+            glPopMatrix();
+        }
+    }
     
 }
 
@@ -78,6 +101,18 @@ void AStarAgent::update() {
     }
 
     else { set_pos(next_pos); }
+
+    // add new position to trail
+    if (sp->gui_draw_footprints) {
+        update_trail();
+    }
+}
+
+void AStarAgent::update_trail() {
+    trail.push_back(get_pos());
+    if(trail.size() > 6) {
+        trail.pop_front();
+    }
 }
 
 void AStarAgent::reset() {
@@ -89,6 +124,10 @@ void AStarAgent::reset() {
 
 void AStarAgent::get_plan() {
     // plan.clear();
-    plan = std::vector<SiteID>(5, SiteID(1, 0));
+    std::vector<SiteID> directions = {SiteID(1,0), SiteID(0,1), SiteID(-1, 0), SiteID(0, -1)};
+
+    plan = std::vector<SiteID>(3, directions[Random::get_unif_int(0, 3)]);
+
+    // plan = std::vector<SiteID>(5, SiteID(1, 0));
 
 }

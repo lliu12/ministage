@@ -21,7 +21,8 @@ int main(int argc, char* argv[])
     // sp.gui_draw_every = 5; // update gui every x updates
     sp.gui_zoom = 20; // zoom in on gui
     sp.gui_draw_cells = true;
-    sp.gui_draw_footprints = false;
+    sp.gui_draw_footprints = true;
+    sp.gui_random_colors = true;
 
     // 
     Pose pose(0,0,0,0);
