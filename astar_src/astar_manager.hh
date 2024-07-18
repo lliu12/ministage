@@ -15,6 +15,7 @@
 #include "astar_utils.hh"
 #include "astar_agent.hh"
 #include "../shared_utils.hh"
+#include "astar_planner.hh"
 
 
 // A simulation instance
@@ -27,8 +28,7 @@ class AStarManager {
 
     sim_params sp;
     SpaceDiscretizer *space;
-
-    // 3D RESERVATION TABLE
+    AStarPlanner *planner;
 
     // SimulationData *sd;
     // /** Pointers to all the agents in this world. */

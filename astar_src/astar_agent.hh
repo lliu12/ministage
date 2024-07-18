@@ -2,6 +2,7 @@
 #define ASTAR_AGENT
 
 #include "../random.hh"
+#include "astar_planner.hh"
 #include "astar_utils.hh"
 #include "../shared_utils.hh"
 #include <deque>
@@ -14,6 +15,7 @@ class AStarAgent {
     SiteID cur_pos;
     sim_params *sp;
     SpaceDiscretizer *space;
+    AStarPlanner *planner;
     Color color;
 
     // store recent poses
@@ -42,7 +44,7 @@ class AStarAgent {
     SiteID random_pos();
 
     // Constructor
-    AStarAgent(int agent_id, sim_params *sim_params, SpaceDiscretizer *sim_space);
+    AStarAgent(int agent_id, sim_params *sim_params, SpaceDiscretizer *sim_space, AStarPlanner *sim_planner);
 
     // Destructor
     ~AStarAgent();

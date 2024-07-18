@@ -11,6 +11,9 @@
 #endif
 
 
+const char* redText = "\033[1;31m";
+const char* resetText = "\033[0m";
+void IS_TRUE(bool x) { if (!(x)) std::cout << redText << __FUNCTION__ << " FAILED on line " << __LINE__ << resetText << std::endl; }
 
 // Periodic space utility functions
 
@@ -140,6 +143,7 @@ void SpaceDiscretizer::initialize_space() {
         float cur_y = -1.0 * space_r;
         for (int idy = 0; idy < cells_per_side; idy++) {
             cells[idx][idy] = new SpaceUnit(cur_x, cur_y, cell_width);
+            cells[idx][idy]->id = SiteID(idx, idy);
             cells[idx][idy]->is_outer = (idx == 0 || idy == 0 || 
                                             idx == cells_per_side - 1 || idy == cells_per_side - 1);
             cur_y += cell_width;

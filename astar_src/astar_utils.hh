@@ -104,34 +104,7 @@ typedef struct {
 // };
 
 
-// container for the x,y indices of a site in the SpaceDiscretizer array
-class SiteID {
-    public:
-    int idx, idy;
 
-    SiteID(int x, int y) : idx(x), idy(y) { /*empty*/}
-
-    SiteID() : idx(0), idy(0) { /*empty*/}
-
-    ~SiteID() {}
-
-    inline SiteID operator+(const SiteID &s) const { return SiteID(idx + s.idx, idy + s.idy); }
-
-    bool operator<(const SiteID &s) const { return ((idy * idy + idx * idx) < (s.idy * s.idy + s.idx * s.idx)); }
-
-    bool operator==(const SiteID &s) const { return (idx == s.idx && idy == s.idy); }
-
-    bool operator!=(const SiteID &s) const { return (idx != s.idx || idy != s.idy); }
-
-    float l1_norm(const SiteID &s) const { return abs(idx - s.idx) + abs(idy - s.idy); }
-
-    float l2_norm(const SiteID &s) const { return hypot(idx - s.idx, idy - s.idy); }
-
-    static SiteID random(int max_idx, int max_idy) { return SiteID(Random::get_unif_int(0, max_idx), Random::get_unif_int(0, max_idy)); }
-
-    virtual void print(const char *prefix) const { printf("%s site id [x index:%i y index:%i]\n", prefix, idx, idy); }
-
-};
 
 
 

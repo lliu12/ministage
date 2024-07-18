@@ -1,10 +1,12 @@
 #include "astar_agent.hh"
 
-AStarAgent::AStarAgent(int agent_id, sim_params *sim_params, SpaceDiscretizer *sim_space) {
+AStarAgent::AStarAgent(int agent_id, sim_params *sim_params, SpaceDiscretizer *sim_space, AStarPlanner *sim_planner) {
     id = agent_id;
     sp = sim_params;
     space = sim_space;
+    planner = sim_planner;
     set_pos(random_pos());
+    goal = random_pos();
 
     if (sp->gui_random_colors) {
         color = Color::RandomColor();
@@ -66,7 +68,20 @@ void AStarAgent::draw() {
                 gluDeleteQuadric(robot_pos);
             glPopMatrix();
         }
+
+    // draw small point at robot goal
+    glPushMatrix(); 
+        pose_shift(get_pos_as_pose(goal));
+            // glColor4f(1, 0, .8, .7); // magenta
+            glColor4f(color.r, color.g, color.b, 0.7);
+            GLUquadric *goal = gluNewQuadric();
+            gluQuadricDrawStyle(goal, GLU_FILL);
+            gluDisk(goal, 0, 0.12, 20, 1);
+            gluDeleteQuadric(goal);
+    glPopMatrix();
     }
+
+
     
 }
 
@@ -79,6 +94,11 @@ void AStarAgent::set_pos(SiteID pos) {
 }
 
 void AStarAgent::update() {
+    if (cur_pos == goal) {
+        goal = random_pos(); // new goal
+        printf("plan size left after goal: %zu \n", size(plan));
+    }
+
     if (size(plan) == 0) {
         get_plan();
     }
@@ -119,15 +139,19 @@ void AStarAgent::reset() {
     trail.clear();
     plan.clear();
     set_pos(random_pos());
+    goal = random_pos();
 
 }
 
 void AStarAgent::get_plan() {
     // plan.clear();
-    std::vector<SiteID> directions = {SiteID(1,0), SiteID(0,1), SiteID(-1, 0), SiteID(0, -1)};
+    // std::vector<SiteID> directions = {SiteID(1,0), SiteID(0,1), SiteID(-1, 0), SiteID(0, -1)};
 
-    plan = std::vector<SiteID>(3, directions[Random::get_unif_int(0, 3)]);
+    // plan = std::vector<SiteID>(3, directions[Random::get_unif_int(0, 3)]);
 
     // plan = std::vector<SiteID>(5, SiteID(1, 0));
+
+    printf("Planning goal to (%i, %i)... \n", goal.idx, goal.idy);
+    plan = planner->search_2d(cur_pos, goal);
 
 }
