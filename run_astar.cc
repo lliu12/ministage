@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
     sim_params sp;
 
     sp.num_agents = 2;
-    sp.periodic = false;
+    sp.periodic = true;
     sp.diags = true;
     sp.r_upper = 8;
 
@@ -30,17 +30,24 @@ int main(int argc, char* argv[])
 
     AStarManager sim = AStarManager(sp);
 
-    std::vector<SiteID> plan = sim.planner->search_2d(SiteID(0,6), SiteID(1,4));
-    while (!plan.empty()) {
-        SiteID s = plan.back();
-        printf("%i, %i \n", s.idx, s.idy);
-        // std::cout << plan.back() << std::endl;
-        plan.pop_back();
-    }
+    // std::vector<SiteID> plan = sim.planner->search_2d(SiteID(0,6), SiteID(1,4));
+    // while (!plan.empty()) {
+    //     SiteID s = plan.back();
+    //     printf("%i, %i \n", s.idx, s.idy);
+    //     // std::cout << plan.back() << std::endl;
+    //     plan.pop_back();
+    // }
 
 
     std::cout << "Checking diagonal distance heuristic function..." << std::endl;
     {
+        IS_TRUE(nearest_periodic(Pose(0, 1, 0, 0), Pose(8, 3, 0, 0), 5.0) == Pose(-2,3,0,0));
+        IS_TRUE(nearest_periodic(Pose(0, 1, 0, 0), Pose(1, 3, 0, 0), 5.0) == Pose(1,3,0,0));
+        IS_TRUE(nearest_periodic(Pose(1, 8, 0, 0), Pose(9, 0, 0, 0), 5.0) == Pose(-1,10,0,0));
+        IS_TRUE(nearest_periodic(Pose(1, 1, 0, 0), Pose(1, 4, 0, 0), 2.5) == Pose(1,-1,0,0));
+
+        // nearest_periodic(Pose(0, 1, 0, 0), Pose(8, 3, 0, 0), sim.space->cells_per_side / 2.0).Print("nearest periodic test: ");
+
         if (sp.diags) {
             IS_TRUE(sim.planner->dist_heuristic(SiteID(0,2), SiteID(5,0)) == 1.5 * 2 + 3);
             // std::cout << "should be 6 but we get " << sim.planner->dist_heuristic(SiteID(0,2), SiteID(5,0)) << std::endl;

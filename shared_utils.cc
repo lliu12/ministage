@@ -14,7 +14,6 @@
 const char* redText = "\033[1;31m";
 const char* resetText = "\033[0m";
 void IS_TRUE(bool x) { if (!(x)) std::cout << redText << __FUNCTION__ << " FAILED on line " << __LINE__ << resetText << std::endl; }
-
 // Periodic space utility functions
 
 

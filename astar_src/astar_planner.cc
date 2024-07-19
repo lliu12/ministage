@@ -19,6 +19,11 @@ AStarPlanner::~AStarPlanner() {}
 
 // TODO: update to account for periodic!
 float AStarPlanner::dist_heuristic(SiteID a, SiteID b) {
+    if (space->periodic) {
+        Pose pose_b = nearest_periodic(Pose(a.idx, a.idy, 0, 0), Pose(b.idx, b.idy, 0, 0), space->cells_per_side / 2.0);
+        b = SiteID(pose_b.x, pose_b.y);
+    }
+
     if (connect_diagonals) { // distance allowing diagonal motion
         int dx = abs(a.idx - b.idx);
         int dy = abs(a.idy - b.idy);
@@ -32,13 +37,13 @@ float AStarPlanner::dist_heuristic(SiteID a, SiteID b) {
 // datatype for storing relevant information
 struct Node {
     // f = g + h
-    double f, g, h;
+    double f, g;
     SiteID pos;
     SiteID parent;
      
     // constructor
-    Node(SiteID my_pos, SiteID my_parent, double f_val, double g_val, double h_val)
-        : pos(my_pos), parent(my_parent), f(f_val), g(g_val), h(h_val)
+    Node(SiteID my_pos, SiteID my_parent, double f_val, double g_val)
+        : pos(my_pos), parent(my_parent), f(f_val), g(g_val)
     {}
 
     Node() {}
@@ -72,14 +77,13 @@ std::vector<SiteID> AStarPlanner::search_2d(SiteID start, SiteID goal) {
         for (int j = 0; j < space->cells_per_side; j++) {
             node_details[i][j].f = __FLT_MAX__;
             node_details[i][j].g = __FLT_MAX__;
-            node_details[i][j].h = __FLT_MAX__;
             node_details[i][j].pos = SiteID(i, j);
             node_details[i][j].parent = SiteID(-1, -1);
         }
     }
 
     // initialize details about starting node
-    node_details[start.idx][start.idy] = Node(start, SiteID(-1, -1), 0, 0, 0);
+    node_details[start.idx][start.idy] = Node(start, SiteID(-1, -1), 0, 0);
     to_visit.insert(node_details[start.idx][start.idy]);
 
     // handle case where start or goal is blocked

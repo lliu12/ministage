@@ -47,7 +47,7 @@ void AStarAgent::draw() {
 
         GLUquadric *robot_pos = gluNewQuadric();
         gluQuadricDrawStyle(robot_pos, GLU_FILL);
-        gluDisk(robot_pos, 0, 0.4, 20, 1);
+        gluDisk(robot_pos, 0, 0.3, 20, 1);
         gluDeleteQuadric(robot_pos);
 
     glPopMatrix();
@@ -64,10 +64,11 @@ void AStarAgent::draw() {
                 
                 GLUquadric *robot_pos = gluNewQuadric();
                 gluQuadricDrawStyle(robot_pos, GLU_FILL);
-                gluDisk(robot_pos, 0, 0.4, 20, 1);
+                gluDisk(robot_pos, 0, 0.3, 20, 1);
                 gluDeleteQuadric(robot_pos);
             glPopMatrix();
         }
+    }
 
     // draw small point at robot goal
     glPushMatrix(); 
@@ -79,7 +80,6 @@ void AStarAgent::draw() {
             gluDisk(goal, 0, 0.12, 20, 1);
             gluDeleteQuadric(goal);
     glPopMatrix();
-    }
 
 
     
@@ -99,28 +99,32 @@ void AStarAgent::update() {
         printf("plan size left after goal: %zu \n", size(plan));
     }
 
-    if (size(plan) == 0) {
+    if (plan.empty()) {
         get_plan();
     }
 
-    SiteID dp = plan.back(); // change in position
-    plan.pop_back();
-    
-    SiteID next_pos = cur_pos + dp;
+    // Plan might be empty if goal is unreachable or if start and goal are the same location
+    if (!plan.empty()) {
+        SiteID dp = plan.back(); // change in position
+        plan.pop_back();
+        
+        SiteID next_pos = cur_pos + dp;
 
-    // if new position is out of bounds
-    if (next_pos.idx < 0 || next_pos.idy < 0 || next_pos.idx >= sp->cells_per_side || next_pos.idy >= sp->cells_per_side) {
-        // if space not periodic, don't move
+        // if new position is out of bounds
+        if (next_pos.idx < 0 || next_pos.idy < 0 || next_pos.idx >= sp->cells_per_side || next_pos.idy >= sp->cells_per_side) {
+            // if space not periodic, don't move
 
-        // else if space periodic,
-        if (sp->periodic) {
-            int wrap_idx = (next_pos.idx + sp->cells_per_side) % sp->cells_per_side;
-            int wrap_idy = (next_pos.idy + sp->cells_per_side) % sp->cells_per_side;
-            set_pos(SiteID(wrap_idx, wrap_idy));
+            // else if space periodic,
+            if (sp->periodic) {
+                int wrap_idx = (next_pos.idx + sp->cells_per_side) % sp->cells_per_side;
+                int wrap_idy = (next_pos.idy + sp->cells_per_side) % sp->cells_per_side;
+                set_pos(SiteID(wrap_idx, wrap_idy));
+            }
         }
+
+        else { set_pos(next_pos); }
     }
 
-    else { set_pos(next_pos); }
 
     // add new position to trail
     if (sp->gui_draw_footprints) {
