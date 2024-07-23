@@ -40,6 +40,7 @@ typedef struct {
     float cell_width; // distance between neighboring sites
 
     float dt; // how much to update by during each step
+    int time_steps;
     bool verbose;
 
     // for agents

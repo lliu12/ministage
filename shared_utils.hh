@@ -237,6 +237,7 @@ class SpaceUnit {
     meters_t x, y, width; // x-coord of middle of cell, y-coord of middle of cell, width of cell
     meters_t xmin, xmax, ymin, ymax; // cell bounds
     std::vector<SpaceUnit *> neighbors; // pointers to neighboring cells
+    std::vector<SpaceUnit *> neighbors_and_me;
     bool is_outer; // unit is on the outer boundary of the square arena and will need to be wrapped across to its neighbors for torus
 
     // add neighbor

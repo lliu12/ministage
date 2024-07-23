@@ -6,7 +6,7 @@ Canvas::Canvas(AStarManager *simulation, int x, int y, int width, int height)
     _scale = sim->sp.gui_zoom;
     _x = 0;
     _y = 0;
-    paused = false;
+    paused = true;
 }
 
 Canvas::~Canvas() {
@@ -77,24 +77,24 @@ void Canvas::draw() {
     // swap_buffers();
 
 
-    // draw dummy obstacles
-    // put in some dummy obstacles
-    for (int i = 0; i < 7; i++) {
+    // // draw dummy obstacles
+    // // put in some dummy obstacles
+    // for (int i = 0; i < 7; i++) {
 
-        meters_t xmin = sim->space->cells[i][5]->xmin;
-        meters_t xmax = sim->space->cells[i][5]->xmax;
-        meters_t ymin = sim->space->cells[i][5]->ymin;
-        meters_t ymax = sim->space->cells[i][5]->ymax;
+    //     meters_t xmin = sim->space->cells[i][5]->xmin;
+    //     meters_t xmax = sim->space->cells[i][5]->xmax;
+    //     meters_t ymin = sim->space->cells[i][5]->ymin;
+    //     meters_t ymax = sim->space->cells[i][5]->ymax;
 
-        glBegin(GL_LINE_LOOP);               // Draw outline of cell, with no fill
-        glColor4f(0.0f, 0.0, 1.0f, 0.8);    // different Green outline
+    //     glBegin(GL_LINE_LOOP);               // Draw outline of cell, with no fill
+    //     glColor4f(0.0f, 0.0, 1.0f, 0.8);    // different Green outline
         
-        glVertex2f(xmin, ymin);              // x, y
-        glVertex2f(xmax, ymin);
-        glVertex2f(xmax, ymax);
-        glVertex2f(xmin, ymax);
-        glEnd();
-    }
+    //     glVertex2f(xmin, ymin);              // x, y
+    //     glVertex2f(xmax, ymin);
+    //     glVertex2f(xmax, ymax);
+    //     glVertex2f(xmin, ymax);
+    //     glEnd();
+    // }
 
     redraw();
 

@@ -30,6 +30,8 @@ class AStarManager {
     SpaceDiscretizer *space;
     AStarPlanner *planner;
 
+    int timestep;
+
     // SimulationData *sd;
     // /** Pointers to all the agents in this world. */
     std::vector <AStarAgent *> agents;

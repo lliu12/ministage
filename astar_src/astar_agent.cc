@@ -96,7 +96,7 @@ void AStarAgent::set_pos(SiteID pos) {
 void AStarAgent::update() {
     if (cur_pos == goal) {
         goal = random_pos(); // new goal
-        printf("plan size left after goal: %zu \n", size(plan));
+        // printf("plan size left after goal: %zu \n", size(plan));
     }
 
     if (plan.empty()) {
@@ -155,7 +155,7 @@ void AStarAgent::get_plan() {
 
     // plan = std::vector<SiteID>(5, SiteID(1, 0));
 
-    printf("Planning goal to (%i, %i)... \n", goal.idx, goal.idy);
-    plan = planner->search_2d(cur_pos, goal);
+    // printf("Planning goal to (%i, %i)... \n", goal.idx, goal.idy);
+    plan = planner->search(cur_pos, goal);
 
 }

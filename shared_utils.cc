@@ -176,6 +176,14 @@ void SpaceDiscretizer::initialize_space() {
             // }
         }
     }
+
+    // populate each cell's neighbors and me member
+    for (int idx = 0; idx < cells_per_side; idx++) {
+        for (int idy = 0; idy < cells_per_side; idy++) {
+            cells[idx][idy]->neighbors_and_me = cells[idx][idy]->neighbors;
+            cells[idx][idy]->neighbors_and_me.push_back(cells[idx][idy]);
+        }
+    }
 }
 
 

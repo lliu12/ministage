@@ -6,15 +6,35 @@
 
 class AStarPlanner {
     public:
-    std::vector<std::vector<bool>> reservations;
+    // 2D reservation table (for obstacles that are always there)
+    std::vector<std::vector<bool>> permanent_reservations;
+
+    // 3D reservation table
+    std::vector<std::vector<std::vector<bool>>> reservations;
     SpaceDiscretizer *space;
     bool connect_diagonals;
+    int total_timesteps;
+    int *timestep; // current time (pointer to sim manager variable)
 
-    // // 3D RESERVATION TABLE
-    // std::vector<std::vector<bool>> reservations;
+    // datatype for storing relevant information
+    struct Node {
+        // f = g + h
+        double f, g; // internal scores used in a* planning
+        int t; // time
+        SiteID pos;
+        SiteID parent;
+        
+        // constructor
+        Node(SiteID my_pos, SiteID my_parent, int timestep, double f_val, double g_val)
+            : pos(my_pos), parent(my_parent), t(timestep), f(f_val), g(g_val)
+        {}
+
+        Node() {}
+    };
+
 
     // Constructor
-    AStarPlanner(SpaceDiscretizer *sim_space, bool diags);
+    AStarPlanner(SpaceDiscretizer *sim_space, bool diags, int time_steps, int *t);
 
     // Destructor
     ~AStarPlanner();
@@ -31,6 +51,12 @@ class AStarPlanner {
 
     // void reset();
     void clear_reservations();
+    
+    // recover plan from the data generated during a search
+    std::vector<SiteID> recover_plan(SiteID start, SiteID goal,  std::vector<std::vector<std::vector<Node>>> *node_details, int goal_reached_time);
+
+    // recover plan from the data generated during a search
+    std::vector<SiteID> recover_plan_2d(SiteID start, SiteID goal, std::vector<std::vector<Node>> *node_details);
 };
 
 
