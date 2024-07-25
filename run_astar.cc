@@ -9,12 +9,15 @@ int main(int argc, char* argv[])
 
     sim_params sp;
 
-    sp.num_agents = 2;
+    sp.num_agents = 5;
     sp.periodic = false;
     sp.diags = true;
     sp.r_upper = 8;
 
-    sp.cells_per_side = 10;
+    sp.cells_per_side = 20;
+
+    sp.sensing_angle = M_PI * 2.0 / 3.0;
+    sp.sensing_range = 2;
 
     sp.dt = .1;
     sp.time_steps = 200;
@@ -50,6 +53,42 @@ int main(int argc, char* argv[])
         }
         
     }
+
+
+    {
+        // use a single agent plan to test functions
+        sp.num_agents = 1;
+        AStarManager test_sim = AStarManager(sp);
+
+        
+        test_sim.agents[0]->set_pos(SiteID(3, 0));
+        test_sim.agents[0]->goal = SiteID(3, 9);
+        test_sim.update();
+
+        // for (SiteID s : test_sim.agents[0]->plan) {
+        //     printf("plan step %i, %i \n", s.idx, s.idy);
+        // }
+
+        // printf("is reserved? %i", static_cast<int>(test_sim.planner->reservations[9][0][9]));
+
+
+// Reservation: time 9, pos 3, 9 
+// Reservation: time 8, pos 3, 8 
+// Reservation: time 7, pos 3, 7 
+// Reservation: time 6, pos 3, 6 
+// Reservation: time 5, pos 3, 5 
+// Reservation: time 4, pos 3, 4 
+// Reservation: time 3, pos 3, 3 
+// Reservation: time 2, pos 3, 2 
+// Reservation: time 1, pos 3, 1 
+
+        IS_TRUE(test_sim.planner->sensing_cone_occupied(SiteID(3,2), 0, 2, sp.sensing_range, sp.sensing_angle)); // should be blocked
+        IS_TRUE(test_sim.planner->sensing_cone_occupied(SiteID(3,2), M_PI / 2.0, 3, sp.sensing_range, sp.sensing_angle)); // should be blocked
+
+        IS_TRUE(test_sim.planner->sensing_cone_occupied(SiteID(3,5), normalize(M_PI / 2.0 * 3), 4, sp.sensing_range, sp.sensing_angle)); // should be blocked
+
+    }
+
 
 
     {

@@ -63,6 +63,7 @@ Pose nearest_periodic_slow(Pose cur_pos, Pose goal_pos, meters_t r_upper) {
 }
 
 
+
 // SpaceUnit function definitions
 
 
@@ -207,3 +208,10 @@ void SpaceDiscretizer::cell_neighbor_helper(int idx, int idy, int nbr_idx, int n
 
 }
 
+
+
+// get coordinate position of a SiteID
+Pose SpaceDiscretizer::get_pos_as_pose(SiteID site_id) {
+    SpaceUnit *su = cells[site_id.idx][site_id.idy];
+    return Pose(su->x, su->y, 0, 0);
+}

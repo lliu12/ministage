@@ -35,7 +35,6 @@ class AStarAgent {
     SiteID get_pos();
 
     Pose get_pos_as_pose();
-    Pose get_pos_as_pose(SiteID site_id);
 
     void update_trail();
 

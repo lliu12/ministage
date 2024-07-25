@@ -23,15 +23,9 @@ SiteID AStarAgent::get_pos() {
     return cur_pos;
 }
 
-// get coordinate position of a SiteID
-Pose AStarAgent::get_pos_as_pose(SiteID site_id) {
-    SpaceUnit *su = space->cells[site_id.idx][site_id.idy];
-    return Pose(su->x, su->y, 0, 0);
-}
-
 // if no SiteID is specified, use agent's current SiteID
 Pose AStarAgent::get_pos_as_pose() {
-    return get_pos_as_pose(cur_pos);
+    return space->get_pos_as_pose(cur_pos);
 }
 
 
@@ -39,29 +33,46 @@ Pose AStarAgent::get_pos_as_pose() {
 // draw
 void AStarAgent::draw() {
     glPushMatrix(); // enter local agent coordinates
-    pose_shift(get_pos_as_pose());
+
+    Pose p = get_pos_as_pose();
+    if (!plan.empty()) { p.a = plan.back().angle(); }
+    // if (!trail.empty()) { 
+    //     p.a = (cur_pos - trail.back()).angle(); 
+    //     printf("my pos: %i, %i and last pos %i, %i", cur_pos.idx, cur_pos.idy, trail.back().idx, trail.back().idy);
+    // }
+
+    pose_shift(p);
 
         // draw disk at robot position
         // glColor4f(.5, .5, .5, .8); // gray
         glColor4f(color.r, color.g, color.b, 0.8);
-
         GLUquadric *robot_pos = gluNewQuadric();
         gluQuadricDrawStyle(robot_pos, GLU_FILL);
         gluDisk(robot_pos, 0, 0.3, 20, 1);
         gluDeleteQuadric(robot_pos);
 
+
+        if (!plan.empty()) {
+            // draw wedge for robot FOV
+            glColor4f(0, 0, 1, 0.15); // blue
+            GLUquadric *fov = gluNewQuadric();
+            gluQuadricDrawStyle(fov, GLU_FILL);
+            gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
+                        rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
+                        rtod(-sp->sensing_angle)); // sweep angle
+            gluDeleteQuadric(fov);
+        }
     glPopMatrix();
 
     // draw trail
     if(sp->gui_draw_footprints) {
         for (SiteID site_id : trail) {
-            Pose p = get_pos_as_pose(site_id);
+            Pose p = space->get_pos_as_pose(site_id);
             glPushMatrix();
             pose_shift(p);
                 // draw disk at footprint position
                 // glColor4f(.5, .5, .5, .3); // gray
                 glColor4f(color.r, color.g, color.b, 0.3);
-                
                 GLUquadric *robot_pos = gluNewQuadric();
                 gluQuadricDrawStyle(robot_pos, GLU_FILL);
                 gluDisk(robot_pos, 0, 0.3, 20, 1);
@@ -72,7 +83,7 @@ void AStarAgent::draw() {
 
     // draw small point at robot goal
     glPushMatrix(); 
-        pose_shift(get_pos_as_pose(goal));
+        pose_shift(space->get_pos_as_pose(goal));
             // glColor4f(1, 0, .8, .7); // magenta
             glColor4f(color.r, color.g, color.b, 0.7);
             GLUquadric *goal = gluNewQuadric();
@@ -94,7 +105,7 @@ void AStarAgent::set_pos(SiteID pos) {
 }
 
 void AStarAgent::update() {
-    if (cur_pos == goal) {
+    while (cur_pos == goal) {
         goal = random_pos(); // new goal
         // printf("plan size left after goal: %zu \n", size(plan));
     }
@@ -156,6 +167,6 @@ void AStarAgent::get_plan() {
     // plan = std::vector<SiteID>(5, SiteID(1, 0));
 
     // printf("Planning goal to (%i, %i)... \n", goal.idx, goal.idy);
-    plan = planner->search(cur_pos, goal);
+    plan = planner->search(cur_pos, goal, sp->sensing_range, sp->sensing_angle);
 
 }

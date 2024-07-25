@@ -35,20 +35,16 @@ void Canvas::draw() {
 
     // Draw robots
     for (AStarAgent *a : sim->agents) {
-        // printf("%i \n", a->cur_pos.idx);
         a->draw();
-        // a->get_pos_as_pose().Print("");
     }
 
     // Draw cells
     if (sim->sp.gui_draw_cells) {
-
         for (const auto& row : sim->space->cells) {
             for (SpaceUnit *c : row) {
                 c->draw();
             }
         }
-
     }
 
     // Draw boundaries of periodic arena
@@ -136,10 +132,10 @@ int Canvas::handle(int event) {
 
                 case '.':
                     return 1;
-                    // if (paused) {
-                    //     sim->update();
-                    //     redraw();
-                    // }
+                    if (paused) {
+                        sim->update();
+                        redraw();
+                    }
             }
             return 1;
     }

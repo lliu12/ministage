@@ -173,6 +173,29 @@ inline void pose_inverse_shift(const Pose &pose) {
     coord_shift(-pose.x, -pose.y, -pose.z, 0);
 }
 
+typedef struct {
+    bool in_cone;
+    meters_t dist_away;
+} cone_result;
+
+// inline cone_result in_vision_cone(Pose agent_pos, Pose nbr_pos, meters_t my_sensor_range, radians_t my_sensor_angle);
+
+
+// need to be strictly within the sensing range
+inline cone_result in_vision_cone(Pose agent_pos, Pose nbr_pos, meters_t my_sensor_range, radians_t my_sensor_angle) {
+    cone_result result;
+    
+    double dx = nbr_pos.x - agent_pos.x;
+    double dy = nbr_pos.y - agent_pos.y;
+    radians_t gamma = atan2(dy, dx); // angle between nbr_pos - agent_pos and x-axis
+    radians_t angle_away_from_centerline = fabs(gamma - agent_pos.a);
+
+    result.dist_away = hypot(dy, dx); 
+    result.in_cone = (result.dist_away < my_sensor_range) && (angle_away_from_centerline < my_sensor_angle / 2.0);
+
+    return result;
+}
+
 
 // Color class
 class Color {
@@ -210,13 +233,25 @@ class SiteID {
 
     bool operator!=(const SiteID &s) const { return (idx != s.idx || idy != s.idy); }
 
-    float l1_norm(const SiteID &s) const { return abs(idx - s.idx) + abs(idy - s.idy); }
+    radians_t angle() const { return atan2(idy, idx); }
 
-    float l2_norm(const SiteID &s) const { return hypot(idx - s.idx, idy - s.idy); }
+    // float l1_norm(const SiteID &s) const { return abs(idx - s.idx) + abs(idy - s.idy); }
+
+    // float l2_norm(const SiteID &s) const { return hypot(idx - s.idx, idy - s.idy); }
 
     static SiteID random(int max_idx, int max_idy) { return SiteID(Random::get_unif_int(0, max_idx), Random::get_unif_int(0, max_idy)); }
 
     virtual void print(const char *prefix) const { printf("%s site id [x index:%i y index:%i]\n", prefix, idx, idy); }
+
+    struct hash
+    {
+        size_t operator()(const SiteID &s) const
+        {
+            size_t xHash = std::hash<int>()(s.idx);
+            size_t yHash = std::hash<int>()(s.idy) << 1;
+            return xHash ^ yHash;
+        }
+    };
 
 };
 
@@ -265,6 +300,8 @@ class SpaceDiscretizer {
     bool periodic;
     bool connect_diagonals; // whether to add diagonal neighbors. if false only add neighbors sharing sides.
     std::vector<std::vector<SpaceUnit *>> cells;
+
+    Pose get_pos_as_pose(SiteID site_id);
 
     SpaceDiscretizer(meters_t r_upper, int u_per_side, bool periodic, bool diags);
     ~SpaceDiscretizer();

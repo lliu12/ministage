@@ -3,6 +3,7 @@
 
 #include "../shared_utils.hh"
 #include "astar_utils.hh"
+#include <unordered_set>
 
 class AStarPlanner {
     public:
@@ -47,7 +48,10 @@ class AStarPlanner {
     std::vector<SiteID> search_2d(SiteID start, SiteID goal);
 
     // 3D search
-    std::vector<SiteID> search(SiteID start, SiteID goal);
+    std::vector<SiteID> search(SiteID start, SiteID goal, meters_t sensing_range = 0, radians_t sensing_angle = 0);
+
+    // check if anything occupies the sensing cone in Pose p at time t
+    bool sensing_cone_occupied(SiteID sensing_from, radians_t a, int t, meters_t sensing_range = 0, radians_t sensing_angle = 0);
 
     // void reset();
     void clear_reservations();
