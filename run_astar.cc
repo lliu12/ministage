@@ -5,8 +5,6 @@
 
 int main(int argc, char* argv[])
 {
-    printf("running run_astar.cc\n");
-
     sim_params sp;
 
     sp.num_agents = 2;
@@ -28,6 +26,9 @@ int main(int argc, char* argv[])
     sp.gui_draw_cells = true;
     sp.gui_draw_footprints = false;
     sp.gui_random_colors = true;
+
+    std::cout << "Checking nearest periodic function..." << std::endl;
+
 
     AStarManager sim = AStarManager(sp);
 
@@ -80,7 +81,7 @@ int main(int argc, char* argv[])
         // periodic simulation for testing periodic sensing
         sp.periodic = true;
         AStarManager p_sim = AStarManager(sp);
-        p_sim.planner->reservations[5][0][0] = 1; // time, idx, idy
+        p_sim.planner->reservations.insert(AStarPlanner::Reservation(5, 0, 0));
         IS_TRUE(p_sim.planner->sensing_cone_occupied(SiteID(0, 9), M_PI / 2.0, 5, sp.sensing_range, sp.sensing_angle));
         IS_TRUE(!p_sim.planner->sensing_cone_occupied(SiteID(0, 9), -M_PI / 2.0, 5, sp.sensing_range, sp.sensing_angle));
         IS_TRUE(p_sim.planner->sensing_cone_occupied(SiteID(9, 0), 0, 5, sp.sensing_range, sp.sensing_angle));
