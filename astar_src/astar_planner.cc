@@ -164,6 +164,13 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
     }
 
     while (!to_visit.empty()) {
+        //// for debugging
+        // printf("\n In open list...\n");
+        // for (Node n : to_visit) {
+        //     printf("%i, %i at time %i has f = %f \n", n.pos.idx, n.pos.idy, n.t, n.f);
+        // }
+
+
         cur = *to_visit.begin();
         to_visit.erase(to_visit.begin());
 
@@ -185,17 +192,14 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
             int idy = nbr->id.idy;
             float new_g = cur.g + dist_heuristic(cur.pos, nbr->id); // cost to get from start to nbr
 
-            // Pose cur_pose = space->get_pos_as_pose(cur.pos);
-            // cur_pose.a = (nbr->id - cur.pos).angle();
-            
-            // bool would_be_sensed = in_vision_cone(cur_pose, 
-            //                                         space->get_pos_as_pose(nbr->id), 
-            //                                         sensing_range, 
-            //                                         sensing_angle).in_cone;
-
-            // printf("Pos %i, %i sensed from Pos %i, %i? %i \n", idx, idy, cur.pos.idx, cur.pos.idy, would_be_sensed);
-            // printf("size of to_visit: %zu \n", size(to_visit));
-            bool blocked = sensing_cone_occupied(cur.pos, (nbr->id - cur.pos).angle(), cur.t, sensing_range, sensing_angle);
+            // wrap sensing angle if needed
+            SiteID wrapped;
+            if (space->periodic) {
+                Pose pose_wrapped = nearest_periodic(Pose(cur.pos.idx, cur.pos.idy, 0, 0), Pose(nbr->id.idx, nbr->id.idy, 0, 0), space->cells_per_side / 2.0);
+                wrapped = SiteID(pose_wrapped.x, pose_wrapped.y);
+            }
+            else { wrapped = nbr->id; }
+            bool blocked = sensing_cone_occupied(cur.pos, (wrapped - cur.pos).angle(), cur.t, sensing_range, sensing_angle);
 
             if(reservations[cur.t + 1][idx][idy] // ignore this location if it is blocked
                 || blocked) // or if it lies in the agent's sensing cone if they were headed this way
@@ -288,6 +292,19 @@ bool AStarPlanner::sensing_cone_occupied(SiteID sensing_from, radians_t a, int t
             if (space->periodic) { test_pose = nearest_periodic(p, test_pose, space->space_r); }
 
             if (in_vision_cone(p, test_pose, sensing_range, sensing_angle).in_cone) {
+                // if (sensing_from == SiteID(3,0) && a == -M_PI / 2) {
+                //     // draw for debugging
+                //         glPushMatrix(); // enter local agent coordinates
+                //             pose_shift(test_pose);
+                //                 // draw disk at robot position
+                //                 glColor4f(0, 1, 1, .8);
+                //                 GLUquadric *robot_pos = gluNewQuadric();
+                //                 gluQuadricDrawStyle(robot_pos, GLU_FILL);
+                //                 gluDisk(robot_pos, 0, 0.1, 20, 1);
+                //                 gluDeleteQuadric(robot_pos);
+                //         glPopMatrix();
+                // }
+
                 if (reservations[cur.t][test->id.idx][test->id.idy]) {
                     printf("Blocked! Sensing from %i, %i at angle %f. Test pos %i, %i. Time %i \n", sensing_from.idx, sensing_from.idy, a, test->id.idx, test->id.idy, cur.t); // debugging tomorrow: when are we blocked or not blocked ?? 
                     return true; // sensing cone is blocked
