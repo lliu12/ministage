@@ -4,6 +4,7 @@
 #include "../shared_utils.hh"
 #include "astar_utils.hh"
 #include <unordered_set>
+#include <unordered_map>
 
 class AStarPlanner {
     public:
@@ -59,12 +60,12 @@ class AStarPlanner {
     struct Node {
         // f = g + h
         double f, g; // internal scores used in a* planning
-        int t; // time
+        float t; // time
         SiteID pos;
         SiteID parent;
         
         // constructor
-        Node(SiteID my_pos, SiteID my_parent, int timestep, double f_val, double g_val)
+        Node(SiteID my_pos, SiteID my_parent, float timestep, double f_val, double g_val)
             : pos(my_pos), parent(my_parent), t(timestep), f(f_val), g(g_val)
         {}
 
@@ -95,10 +96,7 @@ class AStarPlanner {
     void clear_reservations();
     
     // recover plan from the data generated during a search
-    std::vector<SiteID> recover_plan(SiteID start, SiteID goal,  std::vector<std::vector<std::vector<Node>>> *node_details, int goal_reached_time);
-
-    // recover plan from the data generated during a search
-    std::vector<SiteID> recover_plan_2d(SiteID start, SiteID goal, std::vector<std::vector<Node>> *node_details);
+    std::vector<SiteID> recover_plan(SiteID start, SiteID goal,  std::unordered_map<Reservation, Node, Reservation::hash> *node_details, int goal_reached_time);
 
     bool reserved(float t, int idx, int idy) {
         return (reservations.find(Reservation(t, idx, idy)) != reservations.end());

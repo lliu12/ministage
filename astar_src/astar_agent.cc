@@ -52,16 +52,16 @@ void AStarAgent::draw() {
         gluDeleteQuadric(robot_pos);
 
 
-        if (!plan.empty()) {
-            // draw wedge for robot FOV
-            glColor4f(0, 0, 1, 0.15); // blue
-            GLUquadric *fov = gluNewQuadric();
-            gluQuadricDrawStyle(fov, GLU_FILL);
-            gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
-                        rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
-                        rtod(-sp->sensing_angle)); // sweep angle
-            gluDeleteQuadric(fov);
-        }
+        // if (!plan.empty()) {
+        //     // draw wedge for robot FOV
+        //     glColor4f(0, 0, 1, 0.15); // blue
+        //     GLUquadric *fov = gluNewQuadric();
+        //     gluQuadricDrawStyle(fov, GLU_FILL);
+        //     gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
+        //                 rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
+        //                 rtod(-sp->sensing_angle)); // sweep angle
+        //     gluDeleteQuadric(fov);
+        // }
     glPopMatrix();
 
     // draw trail
