@@ -2,37 +2,40 @@
 #include "astar_manager.hh"
 #include "astar_canvas.hh"
 
+const char* redText = "\033[1;31m";
+const char* resetText = "\033[0m";
+#ifndef IS_TRUE
+#define IS_TRUE(x) { if (!(x)) std::cout << redText << __FUNCTION__ << " FAILED on line " << __LINE__ << resetText << std::endl; }
+#endif
+
 
 int main(int argc, char* argv[])
 {
     sim_params sp;
 
-    sp.num_agents = 2;
+    sp.num_agents = 3;
     sp.periodic = false;
     sp.diags = true;
     sp.r_upper = 8;
+    sp.diags_take_longer = true;
 
     sp.cells_per_side = 10;
 
     sp.sensing_angle = M_PI * 2.0 / 3.0;
-    sp.sensing_range = 2;
+    sp.sensing_range = 2 * 1.25;
 
     sp.dt = .1;
     sp.time_steps = 200;
 
-    sp.gui_speedup = 0.25; // speed up gui compared to real time
+    sp.gui_speedup = sp.diags_take_longer ? .5 : .3 ; // speed up gui compared to real time
     // sp.gui_draw_every = 5; // update gui every x updates
     sp.gui_zoom = 20; // zoom in on gui
     sp.gui_draw_cells = true;
     sp.gui_draw_footprints = false;
     sp.gui_random_colors = true;
 
-    std::cout << "Checking nearest periodic function..." << std::endl;
-
-
     AStarManager sim = AStarManager(sp);
 
-    
     {
         std::cout << "Checking nearest periodic function..." << std::endl;
         IS_TRUE(nearest_periodic(Pose(0, 1, 0, 0), Pose(8, 3, 0, 0), 5.0) == Pose(-2,3,0,0));
@@ -96,9 +99,16 @@ int main(int argc, char* argv[])
     {
         // set two agents on course to collide
         sim.agents[0]->set_pos(SiteID(3, 0));
-        sim.agents[0]->goal = SiteID(3, 9);
-        sim.agents[1]->set_pos(SiteID(3, 9));
+        sim.agents[0]->goal = SiteID(3, sim.sp.cells_per_side - 1);
+        sim.agents[1]->set_pos(SiteID(3, sim.sp.cells_per_side - 1));
         sim.agents[1]->goal = SiteID(3,0);
+
+
+        // // set two agents on course to collide in a smaller arena
+        // sim.agents[0]->set_pos(SiteID(0, 0));
+        // sim.agents[0]->goal = SiteID(3, 3);
+        // sim.agents[1]->set_pos(SiteID(2, 0));
+        // sim.agents[1]->goal = SiteID(0,2);
     }
 
     {

@@ -6,6 +6,13 @@
 #include "canvas.hh"
 
 
+const char* redText = "\033[1;31m";
+const char* resetText = "\033[0m";
+#ifndef IS_TRUE
+#define IS_TRUE(x) { if (!(x)) std::cout << redText << __FUNCTION__ << " FAILED on line " << __LINE__ << resetText << std::endl; }
+#endif
+
+
 int main(int argc, char* argv[])
 {
 

@@ -30,7 +30,7 @@ class AStarManager {
     SpaceDiscretizer *space;
     AStarPlanner *planner;
 
-    int timestep;
+    float timestep;
 
     // SimulationData *sd;
     // /** Pointers to all the agents in this world. */

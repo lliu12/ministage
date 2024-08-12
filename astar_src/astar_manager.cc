@@ -10,7 +10,9 @@ AStarManager::AStarManager(sim_params sim_params) {
     space = new SpaceDiscretizer(sp.r_upper, sp.cells_per_side, sp.periodic, sp.diags);
 
     // Create planner
-    planner = new AStarPlanner(space, sp.diags, sp.time_steps, &timestep);
+    planner = new AStarPlanner(space, sp.diags_take_longer, sp.time_steps, &timestep);
+
+    
 
     // Create agents
     for (int i = 0; i < sp.num_agents; i++) {
@@ -33,7 +35,10 @@ void AStarManager::update() {
         a->update(); 
         // TODO: UPDATE RESERVATION TABLE FOR THIS AGENT? 
     }
-    timestep++;
+
+    timestep += sp.diags_take_longer ? 0.5 : 1.0;
+
+
 }
 
 void AStarManager::reset() {

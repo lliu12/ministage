@@ -32,6 +32,7 @@ typedef struct {
 
     bool periodic; ///< use periodic boundary conditions
     bool diags;
+    bool diags_take_longer;
     meters_t r_upper; /// the length of the arena is 2 * r_upper, and the x and y coordinates range from -r_upper to +r_upper
 
     // // neighbor search settings

@@ -35,11 +35,14 @@ void AStarAgent::draw() {
     glPushMatrix(); // enter local agent coordinates
 
     Pose p = get_pos_as_pose();
-    if (!plan.empty()) { p.a = plan.back().angle(); }
-    // if (!trail.empty()) { 
-    //     p.a = (cur_pos - trail.back()).angle(); 
-    //     printf("my pos: %i, %i and last pos %i, %i", cur_pos.idx, cur_pos.idy, trail.back().idx, trail.back().idy);
-    // }
+
+    // determine agent angle
+    for (std::vector<SiteID>::reverse_iterator i = plan.rbegin(); i != plan.rend(); ++i) {
+        if((*i).idx != 0 || (*i).idy != 0) {
+            p.a = (*i).angle();
+            break;
+        }
+    }
 
     pose_shift(p);
 
@@ -52,16 +55,16 @@ void AStarAgent::draw() {
         gluDeleteQuadric(robot_pos);
 
 
-        // if (!plan.empty()) {
-        //     // draw wedge for robot FOV
-        //     glColor4f(0, 0, 1, 0.15); // blue
-        //     GLUquadric *fov = gluNewQuadric();
-        //     gluQuadricDrawStyle(fov, GLU_FILL);
-        //     gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
-        //                 rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
-        //                 rtod(-sp->sensing_angle)); // sweep angle
-        //     gluDeleteQuadric(fov);
-        // }
+        if (!plan.empty()) {
+            // draw wedge for robot FOV
+            glColor4f(0, 0, 1, 0.15); // blue
+            GLUquadric *fov = gluNewQuadric();
+            gluQuadricDrawStyle(fov, GLU_FILL);
+            gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
+                        rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
+                        rtod(-sp->sensing_angle)); // sweep angle
+            gluDeleteQuadric(fov);
+        }
     glPopMatrix();
 
     // draw trail
@@ -159,14 +162,6 @@ void AStarAgent::reset() {
 }
 
 void AStarAgent::get_plan() {
-    // plan.clear();
-    // std::vector<SiteID> directions = {SiteID(1,0), SiteID(0,1), SiteID(-1, 0), SiteID(0, -1)};
-
-    // plan = std::vector<SiteID>(3, directions[Random::get_unif_int(0, 3)]);
-
-    // plan = std::vector<SiteID>(5, SiteID(1, 0));
-
-    // printf("Planning goal to (%i, %i)... \n", goal.idx, goal.idy);
+    printf("\nGetting a new plan for agent %i\n", id);
     plan = planner->search(cur_pos, goal, sp->sensing_range, sp->sensing_angle);
-
 }

@@ -68,9 +68,9 @@ void Canvas::draw() {
         // }
     }
 
-    // // // Swap buffers to display the rendered content
-    // glFlush();
-    // swap_buffers();
+    if (sim->sp.num_agents ==2 && sim->agents[0]->cur_pos == sim->agents[1]->cur_pos) {
+        printf("\033[31merror: first two agents in same position %i, %i\n\033[0m", sim->agents[0]->cur_pos.idx, sim->agents[0]->cur_pos.idy);
+    }
 
 
     // // draw dummy obstacles
@@ -131,11 +131,11 @@ int Canvas::handle(int event) {
                     paused = !paused;
 
                 case '.':
-                    return 1;
                     if (paused) {
                         sim->update();
                         redraw();
                     }
+                    return 1;
             }
             return 1;
     }
