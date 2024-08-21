@@ -1,4 +1,5 @@
 #include "astar_agent.hh"
+#include "astar_planner.hh"
 
 AStarAgent::AStarAgent(int agent_id, sim_params *sim_params, SpaceDiscretizer *sim_space, AStarPlanner *sim_planner) {
     id = agent_id;
@@ -163,5 +164,37 @@ void AStarAgent::reset() {
 
 void AStarAgent::get_plan() {
     printf("\nGetting a new plan for agent %i\n", id);
-    plan = planner->search(cur_pos, goal, sp->sensing_range, sp->sensing_angle);
+    plan = planner->search(cur_pos, goal, sp->sensing_range, sp->sensing_angle, id);
+}
+
+
+void AStarAgent::abort_plan() {
+    //
+    printf("plan to abort: \n");
+    for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
+        printf("step %i, %i\n", (*dp).idx, (*dp).idy);
+    }
+
+    // clear existing reservations
+    float dt = planner->diags_take_longer ? 0.5 : 1.0; 
+    float time = *(planner->timestep);
+    SiteID loc = cur_pos;
+
+    // next step (iterate backward through plan)
+    for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
+        if (!planner->reserved(time, loc.idx, loc.idy)) {
+            printf("\033[31mTrying to erase a reservation (time %f, pos %i, %i) that was never made...\033[0m\n", time, loc.idx, loc.idy);
+        }
+        else {
+            printf("Erasing reservation: time %f, pos %i, %i \n", time, loc.idx, loc.idy); // print information
+            planner->reservations.erase(AStarPlanner::Reservation(time, loc.idx, loc.idy));
+
+            loc = loc + *(dp);
+            time += dt;
+        }
+    } 
+
+    // clear agent's plan
+    plan.clear();
+
 }

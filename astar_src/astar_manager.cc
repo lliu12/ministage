@@ -12,13 +12,13 @@ AStarManager::AStarManager(sim_params sim_params) {
     // Create planner
     planner = new AStarPlanner(space, sp.diags_take_longer, sp.time_steps, &timestep);
 
-    
-
     // Create agents
     for (int i = 0; i < sp.num_agents; i++) {
         agents.push_back(new AStarAgent(i, &sp, space, planner));
     }
 
+    // Pass pointer to planner
+    planner->agents = &agents;
 
 }
 
@@ -33,7 +33,6 @@ AStarManager::~AStarManager(){
 void AStarManager::update() {
     for (AStarAgent *a : agents) { 
         a->update(); 
-        // TODO: UPDATE RESERVATION TABLE FOR THIS AGENT? 
     }
 
     timestep += sp.diags_take_longer ? 0.5 : 1.0;

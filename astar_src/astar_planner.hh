@@ -8,17 +8,21 @@
 #include <thread>   // for std::this_thread::sleep_for
 #include <chrono>   // for std::chrono::seconds
 
+class AStarAgent;
 
 class AStarPlanner {
     public:
     // 2D reservation table (for obstacles that are always there)
     std::vector<std::vector<bool>> permanent_reservations;
 
+    // Store pointers to agents so we can call replans
+    std::vector <AStarAgent *> *agents;
+
     // datatype storing a reservation
     struct Reservation {
+        float t;
         int idx;
         int idy;
-        float t;
         Reservation(float time, int x, int y) : t(time), idx(x), idy(y)
         {
             if (fmod(t, 0.5) > 0) { printf("Error: Reservations only support times t which are multiples of 0.5."); }
@@ -37,19 +41,12 @@ class AStarPlanner {
             }
         };
 
-
-        // Equality comparison
         bool operator==(const Reservation &r) const { return (idx == r.idx && idy == r.idy && t == r.t); }
-        // struct equals {
-        //     bool operator()(const Reservation &r1, const Reservation &r2) const {
-        //         return r1.idx == r2.idx && r1.idy == r2.idy && r1.t == r2.t;
-        //     }
-        // };
     };
 
     // reservation table as hashmap
-    std::unordered_set<Reservation, Reservation::hash> reservations;
-
+    // std::unordered_set<Reservation, Reservation::hash> reservations;
+    std::unordered_map<Reservation, int, Reservation::hash> reservations; 
 
 
     SpaceDiscretizer *space;
@@ -89,7 +86,7 @@ class AStarPlanner {
     std::vector<SiteID> search_2d(SiteID start, SiteID goal);
 
     // 3D search
-    std::vector<SiteID> search(SiteID start, SiteID goal, meters_t sensing_range = 0, radians_t sensing_angle = 0);
+    std::vector<SiteID> search(SiteID start, SiteID goal, meters_t sensing_range = 0, radians_t sensing_angle = 0, int agent_id = -1);
 
     // check if a step is valid
     // cur_t is the time we arrived at SiteID cur
@@ -103,15 +100,16 @@ class AStarPlanner {
     void clear_reservations();
     
     // recover plan from the data generated during a search
-    std::vector<SiteID> recover_plan(SiteID start, SiteID goal,  std::unordered_map<Reservation, Node, Reservation::hash> *node_details, float goal_reached_time);
+    std::vector<SiteID> recover_plan(SiteID start, SiteID goal,  std::unordered_map<Reservation, Node, Reservation::hash> *node_details, float goal_reached_time, int agent_id);
 
-    void make_reservation(float t, int idx, int idy) {
+    void make_reservation(float t, int idx, int idy, int agent_id) {
         if (reserved(t, idx, idy)) {
             printf("\033[31mError: This reservation for time %f, pos %i, %i is already reserved! \n\033[0m", t, idx, idy);
             // Pause execution for 10 seconds
-            std::this_thread::sleep_for(std::chrono::seconds(10));
+            // std::this_thread::sleep_for(std::chrono::seconds(10));
         }
-        reservations.insert(Reservation(t, idx, idy)); // make reservation
+        // reservations.insert(Reservation(t, idx, idy)); // make reservation
+        reservations[Reservation(t, idx, idy)] = agent_id;
         printf("Reservation: time %f, pos %i, %i \n", t, idx, idy); // print information
     }
 

@@ -1,4 +1,5 @@
 #include "astar_planner.hh"
+#include "astar_agent.hh"
 
 AStarPlanner::AStarPlanner(SpaceDiscretizer *sim_space, bool slower_diags, int time_steps, float *t) 
     : permanent_reservations(sim_space->cells_per_side, std::vector<bool>(sim_space->cells_per_side, 0))
@@ -47,7 +48,7 @@ auto cmp = [](AStarPlanner::Node a, AStarPlanner::Node b) {
 
 // uses a* search to return a set of movements to go from start to goal
 // accounts for spacetime reservations made by other agents, and for agent sensing cone
-std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sensing_range, radians_t sensing_angle) {
+std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sensing_range, radians_t sensing_angle, int agent_id) {
     printf("Looking for plan from start %i, %i to goal %i, %i. Current time %f...\n", start.idx, start.idy, goal.idx, goal.idy, *timestep);
 
     Node cur; // node we are currently exploring
@@ -57,27 +58,9 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
     // nodes to explore, in a set sorted in ascending order of f
     std::set<Node, decltype(cmp)> to_visit(cmp);
 
-    // // store details about all nodes
-    // std::vector<std::vector<std::vector<Node>>> node_details(total_timesteps, 
-    //                                                 std::vector<std::vector<Node>>(space->cells_per_side, 
-    //                                                 std::vector<Node>(space->cells_per_side)));
-    // for (int t = 0; t < total_timesteps; t++) {
-    //     for (int i = 0; i < space->cells_per_side; i++) {
-    //         for (int j = 0; j < space->cells_per_side; j++) {
-    //             node_details[t][i][j].f = __FLT_MAX__;
-    //             node_details[t][i][j].g = __FLT_MAX__;
-    //             node_details[t][i][j].pos = SiteID(i, j);
-    //             node_details[t][i][j].parent = SiteID(-1, -1);
-    //             node_details[t][i][j].t = t;
-    //         }
-    //     }
-    // }
+    // nodes already visited
+    std::unordered_map<Reservation, Node, Reservation::hash> node_details; 
 
-    // // initialize details about starting node
-    // node_details[*timestep][start.idx][start.idy] = Node(start, SiteID(-1, -1), *timestep, 0, 0);
-    // to_visit.insert(node_details[*timestep][start.idx][start.idy]);
-
-    std::unordered_map<Reservation, Node, Reservation::hash> node_details;   
     // initialize details about starting node
     node_details[Reservation(*timestep, start.idx, start.idy)] = Node(start, SiteID(-1, -1), *timestep, 0, 0);
     to_visit.insert(node_details[Reservation(*timestep, start.idx, start.idy)]);
@@ -93,9 +76,17 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
         // // for debugging
         // printf("\n In open list...\n");
         // for (Node n : to_visit) {
-        //     // n_parent_closed_list = node_details[Reservation(goal_reached_time, goal.idx, goal.idy)].parent;;
         //     printf("%i, %i at time %f has f = %f and parent %i, %i\n", n.pos.idx, n.pos.idy, n.t, n.f, n.parent.idx, n.parent.idy);
         // }
+
+        printf("\nTop 5 elements of open list (%zu items total)...\n", size(to_visit));
+        // Printing the first 5 elements
+        int count = 0;
+        for (auto it = to_visit.begin(); it != to_visit.end() && count < 5; ++it, ++count) {
+            // std::cout << *it << std::endl;
+            Node n = *it;
+            printf("%i, %i at time %f has f = %f and parent %i, %i\n", n.pos.idx, n.pos.idy, n.t, n.f, n.parent.idx, n.parent.idy);
+        }
 
 
         cur = *to_visit.begin();
@@ -103,11 +94,8 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
 
         // if goal found
         if (cur.pos == goal) {
-            // printf("Goal found in planner.\n");
             found_goal = true;
             goal_reached_time = cur.t;
-
-            // if (node_details.find(Reservation(goal_reached_time, goal.idx, goal.idy)) == node_details.end()) { // where is this res does print... 
 
             // // if (node_details.find(Reservation(cur.t, cur.pos.idx, cur.pos.idy)) == node_details.end()) { // where is this res does not print 
             //     printf("where is this reservation??\n");
@@ -116,8 +104,7 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
             // if (!(Reservation(goal_reached_time, goal.idx, goal.idy) == Reservation(cur.t, cur.pos.idx, cur.pos.idy))) {
             //     printf("why are these different?! grt: %f, cur.t %f\n", goal_reached_time, cur.t);
             // }
-            
-
+        
             break;
         }
         
@@ -133,37 +120,17 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
             float travel_time =  diags_take_longer ? dist_heuristic(cur.pos, nbr->id) : 1.0; // set to 1 to make all steps take equal time again
             float new_g = cur.g + dist_heuristic(cur.pos, nbr->id); // cost to get from start to nbr
 
-            // // wrap sensing angle if needed
-            // SiteID wrapped;
-            // if (space->periodic) {
-            //     Pose pose_wrapped = nearest_periodic(Pose(cur.pos.idx, cur.pos.idy, 0, 0), Pose(nbr->id.idx, nbr->id.idy, 0, 0), space->cells_per_side / 2.0);
-            //     wrapped = SiteID(pose_wrapped.x, pose_wrapped.y);
-            // }
-            // else { wrapped = nbr->id; }
-
-            // // if moving to this neighbor would require moving while something was in our sensing cone, this path is blocked. 
-            // // (but agents never have their sensing cone blocked if their next step is to wait)
-            // bool blocked = (wrapped == cur.pos) ? false : sensing_cone_occupied(cur.pos, (wrapped - cur.pos).angle(), cur.t, sensing_range, sensing_angle);
-
-            // // avoid collisions 
-            // if (diags_take_longer) {
-            //     if (abs(idx - cur.pos.idx) + abs(idy - cur.pos.idy) > 1) { // is a diagonal
-            //         if (reserved(cur.t + 0.5, wrapped.idx, wrapped.idy) || reserved(cur.t + 1.0, wrapped.idx, wrapped.idy)) {
-            //             blocked = true;
-            //         }
-            //     }
-
-            //     else {
-            //         if (reserved(cur.t + 0.5, wrapped.idx, wrapped.idy)) {
-            //             blocked = true;
-            //         }
-            //     }
-            // }
-
             if (reserved(cur.t + travel_time, idx, idy) // ignore this location if it is blocked
                 || is_invalid_step(cur.pos, nbr->id, cur.t, sensing_range, sensing_angle)) // or if it lies in the agent's sensing cone if they were headed this way
             {   
                 // printf("nbr %i, %i is blocked or reserved\n", idx, idy);
+                if (reserved(cur.t + travel_time, idx, idy)) {
+                    printf("time %f, nbr %i, %i is reserved by agent %i\n", cur.t + travel_time, idx, idy, reservations[Reservation(cur.t + travel_time, idx, idy)]);
+                }
+                else {
+                    printf("time %f, nbr %i, %i is blocked\n", cur.t, idx, idy);
+                }
+
                 continue; 
             } 
 
@@ -189,8 +156,23 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
 
     if (!found_goal) {
         printf("\033[31mFailed to find the goal when planning from (%i, %i) to (%i, %i).\n\033[0m", start.idx, start.idy, goal.idx, goal.idy);
-        // // Pause execution for 10 seconds
-        // std::this_thread::sleep_for(std::chrono::seconds(10));
+
+        // call a replan: have this robot wait. find the robot that had this slot reserved next and make them replan. 
+        float dt = diags_take_longer ? 0.5 : 1.0; 
+        if (!reserved(*timestep, start.idx, start.idy) && reserved(*timestep + dt, start.idx, start.idy)) { // if no one is here already, have the robot wait and make whoever's coming next replan
+            int blocker_id = reservations[Reservation(*timestep + dt, start.idx, start.idy)];
+            printf("\033[31mCalling a replan for agent %i \n\033[0m", blocker_id);
+            AStarAgent *blocker = (*agents)[blocker_id];
+
+            // printf("made it here\n");
+            
+            // make blocker replan: need to clear agent's plan, clear any existing reservations, and then get a new plan
+            blocker->abort_plan();
+            blocker->get_plan();
+        }
+
+        // Pause execution for 10 seconds
+        std::this_thread::sleep_for(std::chrono::seconds(5));
         return std::vector<SiteID>();
     }
 
@@ -203,7 +185,7 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
             printf("\033[31mexpected reservation for reaching goal not found!\n\033[0m");
         }
 
-        return recover_plan(start, goal, &node_details, goal_reached_time);
+        return recover_plan(start, goal, &node_details, goal_reached_time, agent_id);
     }
 }
 
@@ -257,15 +239,15 @@ bool AStarPlanner::is_invalid_step(SiteID cur, SiteID nbr, float cur_t, meters_t
 
 // Extract plan back out from table of graph search data
 // Also makes reservations in the reservation table
-std::vector<SiteID> AStarPlanner::recover_plan(SiteID start, SiteID goal, std::unordered_map<Reservation, Node, Reservation::hash> *node_details, float goal_reached_time) {
+std::vector<SiteID> AStarPlanner::recover_plan(SiteID start, SiteID goal, std::unordered_map<Reservation, Node, Reservation::hash> *node_details, float goal_reached_time, int agent_id) {
     std::vector<SiteID> plan;
     float time = goal_reached_time;
     SiteID s = goal; // current location we are tracing
 
-    while (s != start) {
+    while (s != start || time != *timestep) {
         // printf("here at %i, %i at time %f\n", s.idx, s.idy, time);
 
-        make_reservation(time, s.idx, s.idy);
+        make_reservation(time, s.idx, s.idy, agent_id);
         SiteID step = s - (*node_details)[Reservation(time, s.idx, s.idy)].parent;
         // printf("previous step: %i, %i \n", step.idx, step.idy);
 
@@ -278,15 +260,15 @@ std::vector<SiteID> AStarPlanner::recover_plan(SiteID start, SiteID goal, std::u
             
             if (abs(step.idx) + abs(step.idy) <= 1) { // if not a diagonal, this motion takes two half-timesteps
                 plan.push_back(step);
-                make_reservation(time - 0.5, s.idx, s.idy);
+                make_reservation(time - 0.5, s.idx, s.idy, agent_id);
                 plan.push_back(SiteID(0,0));
                 time = time - 1;
             }
             else { // if a diagonal, it takes three half-timesteps
                 plan.push_back(step);
-                make_reservation(time - 0.5, s.idx, s.idy);
+                make_reservation(time - 0.5, s.idx, s.idy, agent_id);
                 plan.push_back(SiteID(0,0));
-                make_reservation(time - 1.0, s.idx, s.idy);
+                make_reservation(time - 1.0, s.idx, s.idy, agent_id);
                 plan.push_back(SiteID(0,0));
                 time = time - 1.5;
             }
@@ -304,6 +286,11 @@ std::vector<SiteID> AStarPlanner::recover_plan(SiteID start, SiteID goal, std::u
             break;
         }
     }
+
+    if (time != *timestep) {
+        printf("\033[31mPlan start time does not match first reservation \033[0m\n");
+    }
+
     return plan;
 }
 

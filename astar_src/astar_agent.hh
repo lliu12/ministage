@@ -2,10 +2,11 @@
 #define ASTAR_AGENT
 
 #include "../random.hh"
-#include "astar_planner.hh"
 #include "astar_utils.hh"
 #include "../shared_utils.hh"
 #include <deque>
+
+class AStarPlanner;
 
 class AStarAgent {
     public:
@@ -25,6 +26,8 @@ class AStarAgent {
     std::vector<SiteID> plan;
 
     void get_plan();
+
+    void abort_plan();
 
     void update();
 
