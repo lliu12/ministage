@@ -14,34 +14,36 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 4;
+    sp.num_agents = 256;
 
     sp.periodic = true;
     sp.circle_arena = false;
-    sp.r_upper = 8;
+    sp.r_upper = 20;
     sp.r_lower = 0;
 
     sp.sensing_angle = M_PI * 2.0 / 3.0;
-    sp.sensing_range = 1;
+    sp.sensing_range = 2;
 
-    sp.cells_range = 8;
+    sp.cells_range = 20;
     if(sp.periodic) { sp.cells_range = sp.r_upper; }
     sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
     
-    sp.anglenoise = -1;
+    sp.anglenoise = 0.5;
     sp.anglebias = 0;
     sp.noise_prob = 1;
-    sp.conditional_noise = true; 
+    sp.conditional_noise = false; 
 
-    sp.avg_runsteps = 30;
+    sp.avg_runsteps = 10;
     sp.randomize_runsteps = true;
 
-    sp.cruisespeed = 0.6;
+    sp.cruisespeed = 0.5;
     sp.turnspeed = 10;
-    sp.goal_tolerance = 0.3;
 
     sp.dt = .1;
+
+    sp.goal_tolerance = 0.3;
+    printf("Goal tolerance is %f\n", sp.goal_tolerance);
 
     sp.gui_speedup = 6; // speed up gui compared to real time
     // sp.gui_draw_every = 5; // update gui every x updates

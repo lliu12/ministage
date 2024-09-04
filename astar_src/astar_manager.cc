@@ -32,7 +32,11 @@ AStarManager::~AStarManager(){
 
 void AStarManager::update() {
     for (AStarAgent *a : agents) { 
-        a->update(); 
+        a->update_plan(); 
+    }
+
+    for (AStarAgent *a : agents) { 
+        a->update_motion(); 
     }
 
     timestep += sp.diags_take_longer ? 0.5 : 1.0;

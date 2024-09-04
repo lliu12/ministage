@@ -29,7 +29,9 @@ class AStarAgent {
 
     void abort_plan();
 
-    void update();
+    void update_plan();
+
+    void update_motion();
 
     void reset();
 

@@ -79,14 +79,14 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
         //     printf("%i, %i at time %f has f = %f and parent %i, %i\n", n.pos.idx, n.pos.idy, n.t, n.f, n.parent.idx, n.parent.idy);
         // }
 
-        printf("\nTop 5 elements of open list (%zu items total)...\n", size(to_visit));
-        // Printing the first 5 elements
-        int count = 0;
-        for (auto it = to_visit.begin(); it != to_visit.end() && count < 5; ++it, ++count) {
-            // std::cout << *it << std::endl;
-            Node n = *it;
-            printf("%i, %i at time %f has f = %f and parent %i, %i\n", n.pos.idx, n.pos.idy, n.t, n.f, n.parent.idx, n.parent.idy);
-        }
+        // printf("\nTop 5 elements of open list (%zu items total)...\n", size(to_visit));
+        // // Printing the first 5 elements
+        // int count = 0;
+        // for (auto it = to_visit.begin(); it != to_visit.end() && count < 5; ++it, ++count) {
+        //     // std::cout << *it << std::endl;
+        //     Node n = *it;
+        //     printf("%i, %i at time %f has f = %f and parent %i, %i\n", n.pos.idx, n.pos.idy, n.t, n.f, n.parent.idx, n.parent.idy);
+        // }
 
 
         cur = *to_visit.begin();
@@ -123,13 +123,12 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
             if (reserved(cur.t + travel_time, idx, idy) // ignore this location if it is blocked
                 || is_invalid_step(cur.pos, nbr->id, cur.t, sensing_range, sensing_angle)) // or if it lies in the agent's sensing cone if they were headed this way
             {   
-                // printf("nbr %i, %i is blocked or reserved\n", idx, idy);
-                if (reserved(cur.t + travel_time, idx, idy)) {
-                    printf("time %f, nbr %i, %i is reserved by agent %i\n", cur.t + travel_time, idx, idy, reservations[Reservation(cur.t + travel_time, idx, idy)]);
-                }
-                else {
-                    printf("time %f, nbr %i, %i is blocked\n", cur.t, idx, idy);
-                }
+                // if (reserved(cur.t + travel_time, idx, idy)) {
+                //     printf("time %f, nbr %i, %i is reserved by agent %i\n", cur.t + travel_time, idx, idy, reservations[Reservation(cur.t + travel_time, idx, idy)]);
+                // }
+                // else {
+                //     printf("time %f, nbr %i, %i is blocked\n", cur.t, idx, idy);
+                // }
 
                 continue; 
             } 
@@ -156,24 +155,27 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
 
     if (!found_goal) {
         printf("\033[31mFailed to find the goal when planning from (%i, %i) to (%i, %i).\n\033[0m", start.idx, start.idy, goal.idx, goal.idy);
-
-        // call a replan: have this robot wait. find the robot that had this slot reserved next and make them replan. 
+        // call a replan: have this robot wait. find the robot that had this spot reserved next and make them replan. 
         float dt = diags_take_longer ? 0.5 : 1.0; 
-        if (!reserved(*timestep, start.idx, start.idy) && reserved(*timestep + dt, start.idx, start.idy)) { // if no one is here already, have the robot wait and make whoever's coming next replan
+        if (reservations[Reservation(*timestep, start.idx, start.idy)] == agent_id && reserved(*timestep + dt, start.idx, start.idy)) { // if no one is here already, have the robot wait and make whoever's coming next replan
             int blocker_id = reservations[Reservation(*timestep + dt, start.idx, start.idy)];
-            printf("\033[31mCalling a replan for agent %i \n\033[0m", blocker_id);
             AStarAgent *blocker = (*agents)[blocker_id];
+            blocker->abort_plan(); // clear blocker's reservations
+            printf("Reserving a wait step for agent %i...\n", agent_id);
+            make_reservation(*timestep + dt, start.idx, start.idy, agent_id); // make wait reservation for current agent
+            printf("\033[31mCalling a replan for agent %i \n\033[0m", blocker_id);
+            blocker->get_plan(); // get new plan for blocker
+        }
+        else { 
+            printf("\033[31mPlan failed but agent should have been able to wait \n\033[0m"); 
+            printf("Reserved by agent for current step? id:  %i \n", reservations[Reservation(*timestep, start.idx, start.idy)]);
 
-            // printf("made it here\n");
-            
-            // make blocker replan: need to clear agent's plan, clear any existing reservations, and then get a new plan
-            blocker->abort_plan();
-            blocker->get_plan();
+            printf("Reserved during next step? %i \n", reserved(*timestep + dt, start.idx, start.idy));
         }
 
-        // Pause execution for 10 seconds
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        return std::vector<SiteID>();
+        // Pause execution
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        return std::vector<SiteID>{SiteID(0, 0)};
     }
 
     else {

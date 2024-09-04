@@ -6,7 +6,13 @@ AStarAgent::AStarAgent(int agent_id, sim_params *sim_params, SpaceDiscretizer *s
     sp = sim_params;
     space = sim_space;
     planner = sim_planner;
+
     set_pos(random_pos());
+    while (planner->reserved(*(planner->timestep), cur_pos.idx, cur_pos.idy)) {
+        set_pos(random_pos());
+    }
+    planner->make_reservation(*(planner->timestep), cur_pos.idx, cur_pos.idy, id);
+
     goal = random_pos();
 
     if (sp->gui_random_colors) {
@@ -19,7 +25,7 @@ AStarAgent::AStarAgent(int agent_id, sim_params *sim_params, SpaceDiscretizer *s
 
 AStarAgent::~AStarAgent() {}
 
-// return current positoin
+// return current position
 SiteID AStarAgent::get_pos() {
     return cur_pos;
 }
@@ -108,7 +114,15 @@ void AStarAgent::set_pos(SiteID pos) {
     cur_pos = pos;
 }
 
-void AStarAgent::update() {
+void AStarAgent::update_plan() {
+
+    if (!planner->reserved(*(planner->timestep), cur_pos.idx, cur_pos.idy) || planner->reservations[AStarPlanner::Reservation(*(planner->timestep), cur_pos.idx, cur_pos.idy)] != id) {
+        printf("\033[31mAgent %i at time %f, pos %i, %i without a reservation. \n\033[0m", id, *(planner->timestep), cur_pos.idx, cur_pos.idy);
+    }
+    // else {
+    //     printf("Agent %i at time %f, pos %i, %i matches reservation. \n", id, *(planner->timestep), cur_pos.idx, cur_pos.idy);
+    // }
+
     while (cur_pos == goal) {
         goal = random_pos(); // new goal
         // printf("plan size left after goal: %zu \n", size(plan));
@@ -118,6 +132,9 @@ void AStarAgent::update() {
         get_plan();
     }
 
+}
+
+void AStarAgent::update_motion() {
     // Plan might be empty if goal is unreachable or if start and goal are the same location
     if (!plan.empty()) {
         SiteID dp = plan.back(); // change in position
@@ -158,6 +175,10 @@ void AStarAgent::reset() {
     trail.clear();
     plan.clear();
     set_pos(random_pos());
+    while (planner->reserved(*(planner->timestep), cur_pos.idx, cur_pos.idy)) {
+        set_pos(random_pos());
+    }
+    planner->make_reservation(*(planner->timestep), cur_pos.idx, cur_pos.idy, id);
     goal = random_pos();
 
 }
@@ -165,12 +186,24 @@ void AStarAgent::reset() {
 void AStarAgent::get_plan() {
     printf("\nGetting a new plan for agent %i\n", id);
     plan = planner->search(cur_pos, goal, sp->sensing_range, sp->sensing_angle, id);
+
+    printf("Agent %i's plan: \n", id);
+    for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
+        printf("step %i, %i\n", (*dp).idx, (*dp).idy);
+    }
+
 }
 
 
 void AStarAgent::abort_plan() {
-    //
-    printf("plan to abort: \n");
+    if (cur_pos == goal) {
+        printf("No need to abort plan for Agent %i - goal reached!\n", id);
+        goal = random_pos(); // new goal
+        get_plan();
+        return;
+    }
+
+    printf("Aborting plan for Agent %i: \n", id);
     for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
         printf("step %i, %i\n", (*dp).idx, (*dp).idy);
     }
@@ -182,13 +215,16 @@ void AStarAgent::abort_plan() {
 
     // next step (iterate backward through plan)
     for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
-        if (!planner->reserved(time, loc.idx, loc.idy)) {
+        if (planner->reservations[AStarPlanner::Reservation(time, loc.idx, loc.idy)] != id) {
             printf("\033[31mTrying to erase a reservation (time %f, pos %i, %i) that was never made...\033[0m\n", time, loc.idx, loc.idy);
+            printf("Agent %i currently at time %f, pos %i, %i\n", id, *(planner->timestep), cur_pos.idx, cur_pos.idy);
         }
         else {
-            printf("Erasing reservation: time %f, pos %i, %i \n", time, loc.idx, loc.idy); // print information
-            planner->reservations.erase(AStarPlanner::Reservation(time, loc.idx, loc.idy));
-
+            // erase reservation if agent is not already occupying it
+            if (time != *(planner->timestep)) {
+                printf("Erasing reservation: time %f, pos %i, %i \n", time, loc.idx, loc.idy); // print information
+                planner->reservations.erase(AStarPlanner::Reservation(time, loc.idx, loc.idy));
+            }
             loc = loc + *(dp);
             time += dt;
         }
