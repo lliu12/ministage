@@ -7,6 +7,10 @@ AStarAgent::AStarAgent(int agent_id, sim_params *sim_params, SpaceDiscretizer *s
     space = sim_space;
     planner = sim_planner;
 
+    goals_reached = 0;
+    goal_birth_time = *(planner->timestep);
+
+
     set_pos(random_pos());
     while (planner->reserved(*(planner->timestep), cur_pos.idx, cur_pos.idy)) {
         set_pos(random_pos());
@@ -123,9 +127,8 @@ void AStarAgent::update_plan() {
     //     printf("Agent %i at time %f, pos %i, %i matches reservation. \n", id, *(planner->timestep), cur_pos.idx, cur_pos.idy);
     // }
 
-    while (cur_pos == goal) {
-        goal = random_pos(); // new goal
-        // printf("plan size left after goal: %zu \n", size(plan));
+    if (cur_pos == goal) {
+        goal_reached_update();
     }
 
     if (plan.empty()) {
@@ -171,6 +174,14 @@ void AStarAgent::update_trail() {
     }
 }
 
+void AStarAgent::goal_reached_update() {
+    while (cur_pos == goal) {
+        goal = random_pos(); // new goal
+    }
+    goals_reached++;
+    goal_birth_time = *(planner->timestep);
+}
+
 void AStarAgent::reset() {
     trail.clear();
     plan.clear();
@@ -180,17 +191,19 @@ void AStarAgent::reset() {
     }
     planner->make_reservation(*(planner->timestep), cur_pos.idx, cur_pos.idy, id);
     goal = random_pos();
+    goals_reached = 0;
+    goal_birth_time = *(planner->timestep);
 
 }
 
 void AStarAgent::get_plan() {
-    printf("\nGetting a new plan for agent %i\n", id);
+    // printf("\nGetting a new plan for agent %i\n", id);
     plan = planner->search(cur_pos, goal, sp->sensing_range, sp->sensing_angle, id);
 
-    printf("Agent %i's plan: \n", id);
-    for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
-        printf("step %i, %i\n", (*dp).idx, (*dp).idy);
-    }
+    // printf("Agent %i's plan: \n", id);
+    // for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
+    //     printf("step %i, %i\n", (*dp).idx, (*dp).idy);
+    // }
 
 }
 
@@ -198,16 +211,17 @@ void AStarAgent::get_plan() {
 void AStarAgent::abort_plan() {
     if (cur_pos == goal) {
         printf("No need to abort plan for Agent %i - goal reached!\n", id);
-        goal = random_pos(); // new goal
+        goal_reached_update();
         get_plan();
         return;
     }
 
-    printf("Aborting plan for Agent %i: \n", id);
-    for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
-        printf("step %i, %i\n", (*dp).idx, (*dp).idy);
+    if (planner->verbose) {
+        printf("Aborting plan for Agent %i: \n", id);
+        for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
+            printf("step %i, %i\n", (*dp).idx, (*dp).idy);
+        }
     }
-
     // clear existing reservations
     float dt = planner->diags_take_longer ? 0.5 : 1.0; 
     float time = *(planner->timestep);
@@ -222,7 +236,9 @@ void AStarAgent::abort_plan() {
         else {
             // erase reservation if agent is not already occupying it
             if (time != *(planner->timestep)) {
-                printf("Erasing reservation: time %f, pos %i, %i \n", time, loc.idx, loc.idy); // print information
+                if (planner->verbose) {
+                    printf("Erasing reservation: time %f, pos %i, %i \n", time, loc.idx, loc.idy); // print information
+                }
                 planner->reservations.erase(AStarPlanner::Reservation(time, loc.idx, loc.idy));
             }
             loc = loc + *(dp);

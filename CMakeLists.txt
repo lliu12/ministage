@@ -31,6 +31,7 @@ endif()
 add_executable(Run_MiniStage run_ministage.cc shared_utils.cc)
 add_executable(MiniStage_Results get_ministage_results.cc shared_utils.cc)
 add_executable(Run_Astar run_astar.cc shared_utils.cc)
+add_executable(Astar_Results get_astar_results.cc shared_utils.cc)
 
 # add source code library
 add_subdirectory(src)
@@ -40,6 +41,7 @@ include_directories(${FLTK_INCLUDE_DIR} src astar_src)
 target_link_libraries(Run_MiniStage PUBLIC src ${FLTK_LIBRARIES})
 target_link_libraries(MiniStage_Results PUBLIC src ${FLTK_LIBRARIES})
 target_link_libraries(Run_Astar PUBLIC astar_src ${FLTK_LIBRARIES})
+target_link_libraries(Astar_Results PUBLIC astar_src ${FLTK_LIBRARIES})
 
 
 

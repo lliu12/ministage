@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 {
     sim_params sp;
 
-    sp.num_agents = 25;
+    sp.num_agents = 100;
     sp.periodic = false;
     sp.diags = true;
     sp.r_upper = 8;
@@ -33,6 +33,8 @@ int main(int argc, char* argv[])
     sp.gui_draw_cells = true;
     sp.gui_draw_footprints = false;
     sp.gui_random_colors = true;
+
+    sp.verbose = true;
 
     AStarManager sim = AStarManager(sp);
 
@@ -106,8 +108,6 @@ int main(int argc, char* argv[])
         IS_TRUE(!p_sim.planner->sensing_cone_occupied(SiteID(9, 0), M_PI, 5, sp.sensing_range, sp.sensing_angle));
         IS_TRUE(p_sim.planner->sensing_cone_occupied(SiteID(9, 9), M_PI / 4.0, 5, 2 * sp.sensing_range, sp.sensing_angle));
         // IS_TRUE(!p_sim.planner->sensing_cone_occupied(SiteID(9, 9), M_PI, 5, sp.sensing_range, sp.sensing_angle));
-
-
 
     }
 

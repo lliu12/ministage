@@ -1,7 +1,7 @@
 #include "astar_planner.hh"
 #include "astar_agent.hh"
 
-AStarPlanner::AStarPlanner(SpaceDiscretizer *sim_space, bool slower_diags, int time_steps, float *t) 
+AStarPlanner::AStarPlanner(SpaceDiscretizer *sim_space, bool slower_diags, int time_steps, float *t, bool v) 
     : permanent_reservations(sim_space->cells_per_side, std::vector<bool>(sim_space->cells_per_side, 0))
 {
     space = sim_space;
@@ -9,6 +9,7 @@ AStarPlanner::AStarPlanner(SpaceDiscretizer *sim_space, bool slower_diags, int t
     diags_take_longer = slower_diags;
     total_timesteps = time_steps;
     timestep = t; // current timestep
+    verbose = v;
 }
 
 
@@ -49,7 +50,7 @@ auto cmp = [](AStarPlanner::Node a, AStarPlanner::Node b) {
 // uses a* search to return a set of movements to go from start to goal
 // accounts for spacetime reservations made by other agents, and for agent sensing cone
 std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sensing_range, radians_t sensing_angle, int agent_id) {
-    printf("Looking for plan from start %i, %i to goal %i, %i. Current time %f...\n", start.idx, start.idy, goal.idx, goal.idy, *timestep);
+    // printf("Looking for plan from start %i, %i to goal %i, %i. Current time %f...\n", start.idx, start.idy, goal.idx, goal.idy, *timestep);
 
     Node cur; // node we are currently exploring
     bool found_goal = false;
@@ -169,12 +170,14 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
         else { 
             printf("\033[31mPlan failed but agent should have been able to wait \n\033[0m"); 
             printf("Reserved by agent for current step? id:  %i \n", reservations[Reservation(*timestep, start.idx, start.idy)]);
-
             printf("Reserved during next step? %i \n", reserved(*timestep + dt, start.idx, start.idy));
+
+            printf("Reserving a wait step for agent %i...\n", agent_id); // possible agent could wait but still never make it, i guess
+            make_reservation(*timestep + dt, start.idx, start.idy, agent_id); // make wait reservation for current agent
         }
 
-        // Pause execution
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        // // Pause execution
+        // std::this_thread::sleep_for(std::chrono::seconds(2));
         return std::vector<SiteID>{SiteID(0, 0)};
     }
 

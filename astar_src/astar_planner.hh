@@ -54,6 +54,7 @@ class AStarPlanner {
     bool diags_take_longer; // if true, diagonals take 3 0.5-length timesteps, while adjacents only take 2
     int total_timesteps;
     float *timestep; // current time (pointer to sim manager variable)
+    bool verbose;
 
 
     struct Node {
@@ -73,7 +74,7 @@ class AStarPlanner {
 
 
     // Constructor
-    AStarPlanner(SpaceDiscretizer *sim_space, bool slower_diags, int time_steps, float *t);
+    AStarPlanner(SpaceDiscretizer *sim_space, bool slower_diags, int time_steps, float *t, bool v);
 
     // Destructor
     ~AStarPlanner();
@@ -106,11 +107,13 @@ class AStarPlanner {
         if (reserved(t, idx, idy)) {
             printf("\033[31mError: This reservation for time %f, pos %i, %i is already reserved! \n\033[0m", t, idx, idy);
             // Pause execution for 10 seconds
-            // std::this_thread::sleep_for(std::chrono::seconds(10));
+            // std::this_thread::sleep_for(std::chrono::seconds(2));
         }
         // reservations.insert(Reservation(t, idx, idy)); // make reservation
         reservations[Reservation(t, idx, idy)] = agent_id;
-        printf("Reservation: time %f, pos %i, %i \n", t, idx, idy); // print information
+        if (verbose) {
+            printf("Reservation: time %f, pos %i, %i \n", t, idx, idy); // print information
+        }
     }
 
     bool reserved(float t, int idx, int idy) {

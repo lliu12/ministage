@@ -18,6 +18,8 @@ class AStarAgent {
     SpaceDiscretizer *space;
     AStarPlanner *planner;
     Color color;
+    int goals_reached;
+    float goal_birth_time;
 
     // store recent poses
     std::deque<SiteID> trail;
@@ -32,6 +34,8 @@ class AStarAgent {
     void update_plan();
 
     void update_motion();
+
+    void goal_reached_update();
 
     void reset();
 

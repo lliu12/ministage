@@ -42,6 +42,8 @@ class AStarManager {
     void run_trials(int trials, double trial_length);
     void run_trial(double trial_length, int trial_id);
     void save_data(int trial_id);
+
+    std::ofstream outfile;
 };
 
 
