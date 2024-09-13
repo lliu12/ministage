@@ -25,7 +25,7 @@ class AStarPlanner {
         int idy;
         Reservation(float time, int x, int y) : t(time), idx(x), idy(y)
         {
-            if (fmod(t, 0.5) > 0) { printf("Error: Reservations only support times t which are multiples of 0.5."); }
+            if (fmod(t, 0.5) > 1e-5) { printf("Error: Reservations only support times t which are multiples of 0.5."); }
         }
 
         struct hash
@@ -95,7 +95,7 @@ class AStarPlanner {
     bool is_invalid_step(SiteID cur, SiteID nbr, float cur_t, meters_t sensing_range, radians_t sensing_angle);
 
     // check if anything occupies the sensing cone in Pose p at time t
-    bool sensing_cone_occupied(SiteID sensing_from, radians_t a, int t, meters_t sensing_range = 0, radians_t sensing_angle = 0);
+    bool sensing_cone_occupied(SiteID sensing_from, radians_t a, float t, meters_t sensing_range = 0, radians_t sensing_angle = 0);
 
     // void reset();
     void clear_reservations();
@@ -105,7 +105,8 @@ class AStarPlanner {
 
     void make_reservation(float t, int idx, int idy, int agent_id) {
         if (reserved(t, idx, idy)) {
-            printf("\033[31mError: This reservation for time %f, pos %i, %i is already reserved! \n\033[0m", t, idx, idy);
+            int blocker_id = reservations[Reservation(t, idx, idy)];
+            printf("\033[31mError: This reservation for time %f, pos %i, %i is already reserved by agent %i! \n\033[0m", t, idx, idy, blocker_id);
             // Pause execution for 10 seconds
             // std::this_thread::sleep_for(std::chrono::seconds(2));
         }

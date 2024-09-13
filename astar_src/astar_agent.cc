@@ -229,20 +229,17 @@ void AStarAgent::abort_plan() {
 
     // next step (iterate backward through plan)
     for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
+        loc = loc + *(dp);
+        time += dt;
         if (planner->reservations[AStarPlanner::Reservation(time, loc.idx, loc.idy)] != id) {
             printf("\033[31mTrying to erase a reservation (time %f, pos %i, %i) that was never made...\033[0m\n", time, loc.idx, loc.idy);
             printf("Agent %i currently at time %f, pos %i, %i\n", id, *(planner->timestep), cur_pos.idx, cur_pos.idy);
         }
         else {
-            // erase reservation if agent is not already occupying it
-            if (time != *(planner->timestep)) {
-                if (planner->verbose) {
-                    printf("Erasing reservation: time %f, pos %i, %i \n", time, loc.idx, loc.idy); // print information
-                }
-                planner->reservations.erase(AStarPlanner::Reservation(time, loc.idx, loc.idy));
+            if (planner->verbose) {
+                printf("Erasing reservation: time %f, pos %i, %i \n", time, loc.idx, loc.idy); // print information
             }
-            loc = loc + *(dp);
-            time += dt;
+            planner->reservations.erase(AStarPlanner::Reservation(time, loc.idx, loc.idy));
         }
     } 
 

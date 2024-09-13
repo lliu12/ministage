@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     sp.gui_draw_footprints = false;
     sp.gui_random_colors = true;
 
-    sp.verbose = true;
+    sp.verbose = false;
 
     AStarManager sim = AStarManager(sp);
 
@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
         
         test_sim.agents[0]->set_pos(SiteID(3, 0));
         test_sim.agents[0]->goal = SiteID(3, 9);
+        test_sim.planner->make_reservation(0, 3, 0, 0);
         test_sim.update();
 
         // for (SiteID s : test_sim.agents[0]->plan) {
