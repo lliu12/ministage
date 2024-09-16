@@ -20,6 +20,7 @@ class AStarAgent {
     Color color;
     int goals_reached;
     float goal_birth_time;
+    radians_t travel_angle;
 
     // store recent poses
     std::deque<SiteID> trail;

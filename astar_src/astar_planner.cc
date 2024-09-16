@@ -168,7 +168,9 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
     }
 
     if (!found_goal) {
-        printf("\033[31mFailed to find the goal when planning from (%i, %i) to (%i, %i) after %i search rounds.\n\033[0m", start.idx, start.idy, goal.idx, goal.idy, search_rounds);
+        if (verbose) {
+            printf("\033[31mFailed to find the goal when planning from (%i, %i) to (%i, %i) after %i search rounds.\n\033[0m", start.idx, start.idy, goal.idx, goal.idy, search_rounds);
+        }
         // call a replan: have this robot wait. find the robot that had this spot reserved next and make them replan. 
         // check an additional intermediate step if diags take longer
         std::vector<float> time_incs = diags_take_longer ? std::vector<float>{0.5, 1.0} : std::vector<float>{1.0};
@@ -181,10 +183,14 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
                 if (blocker_id != agent_id) {
                     AStarAgent *blocker = (*agents)[blocker_id];
                     blocker->abort_plan(); // clear blocker's reservations
-                    printf("Reserving a wait step for agent %i...\n", agent_id);
+                    if (verbose) {
+                        printf("Reserving a wait step for agent %i...\n", agent_id);
+                    }
                     make_reservation(*timestep + dt, start.idx, start.idy, agent_id); // make wait reservation for current agent
                     plan.push_back(SiteID(0, 0));
-                    printf("\033[31mCalling a replan for agent %i \n\033[0m", blocker_id);
+                    if (verbose) {
+                        printf("\033[31mCalling a replan for agent %i \n\033[0m", blocker_id);
+                    }
                     blocker->get_plan(); // get new plan for blocker
                 }
                 else {
@@ -192,7 +198,9 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
                 }
             }
             else {
-                printf("Reserving a wait step for agent %i...\n", agent_id);
+                if (verbose) {
+                    printf("Reserving a wait step for agent %i...\n", agent_id);
+                }
                 make_reservation(*timestep + dt, start.idx, start.idy, agent_id); // make wait reservation for current agent
                 plan.push_back(SiteID(0, 0));
             }

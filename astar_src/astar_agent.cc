@@ -48,12 +48,7 @@ void AStarAgent::draw() {
     Pose p = get_pos_as_pose();
 
     // determine agent angle
-    for (std::vector<SiteID>::reverse_iterator i = plan.rbegin(); i != plan.rend(); ++i) {
-        if((*i).idx != 0 || (*i).idy != 0) {
-            p.a = (*i).angle();
-            break;
-        }
-    }
+    p.a = travel_angle;
 
     pose_shift(p);
 
@@ -65,17 +60,15 @@ void AStarAgent::draw() {
         gluDisk(robot_pos, 0, 0.3, 20, 1);
         gluDeleteQuadric(robot_pos);
 
-
-        if (!plan.empty()) {
-            // draw wedge for robot FOV
-            glColor4f(0, 0, 1, 0.15); // blue
-            GLUquadric *fov = gluNewQuadric();
-            gluQuadricDrawStyle(fov, GLU_FILL);
-            gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
-                        rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
-                        rtod(-sp->sensing_angle)); // sweep angle
-            gluDeleteQuadric(fov);
-        }
+        // draw wedge for robot FOV
+        glColor4f(0, 0, 1, 0.15); // blue
+        GLUquadric *fov = gluNewQuadric();
+        gluQuadricDrawStyle(fov, GLU_FILL);
+        gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
+                    rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
+                    rtod(-sp->sensing_angle)); // sweep angle
+        gluDeleteQuadric(fov);
+        
     glPopMatrix();
 
     // draw trail
@@ -135,6 +128,9 @@ void AStarAgent::update_plan() {
         get_plan();
     }
 
+    if (plan.back() != SiteID(0,0)) {
+        travel_angle = plan.back().angle();
+    }
 }
 
 void AStarAgent::update_motion() {

@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 {
     sim_params sp;
 
-    sp.num_agents = 100;
+    sp.num_agents = 2;
     sp.periodic = false;
     sp.diags = true;
     sp.r_upper = 8;
