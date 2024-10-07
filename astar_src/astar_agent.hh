@@ -28,9 +28,14 @@ class AStarAgent {
     // plan for upcoming steps
     std::vector<SiteID> plan;
 
+    // // store upcoming positions
+    // std::unordered_map<float, SiteID> positions; 
+
     void get_plan();
 
     void abort_plan();
+
+    void update_travel_angle();
 
     void update_plan();
 
@@ -47,6 +52,10 @@ class AStarAgent {
     Pose get_pos_as_pose();
 
     void update_trail();
+
+    // Return the step agent will take during the simulation step starting at time t. 
+    // This function needs to be called before update_motion is called (when the current step is dropped from the plan)
+    SiteID step_at_time(float t);
 
     void draw();
 

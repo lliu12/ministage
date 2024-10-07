@@ -42,7 +42,7 @@ typedef double radians_t;
 /** Normalize an angle to within +/_ M_PI. */
 inline double normalize(double a)
 {
-    while (a < -M_PI)
+    while (a <= -M_PI)
         a += 2.0 * M_PI;
     while (a > M_PI)
         a -= 2.0 * M_PI;
@@ -178,9 +178,6 @@ typedef struct {
     meters_t dist_away;
 } cone_result;
 
-// inline cone_result in_vision_cone(Pose agent_pos, Pose nbr_pos, meters_t my_sensor_range, radians_t my_sensor_angle);
-
-
 // need to be strictly within the sensing range
 inline cone_result in_vision_cone(Pose agent_pos, Pose nbr_pos, meters_t my_sensor_range, radians_t my_sensor_angle) {
     cone_result result;
@@ -188,7 +185,7 @@ inline cone_result in_vision_cone(Pose agent_pos, Pose nbr_pos, meters_t my_sens
     double dx = nbr_pos.x - agent_pos.x;
     double dy = nbr_pos.y - agent_pos.y;
     radians_t gamma = atan2(dy, dx); // angle between nbr_pos - agent_pos and x-axis
-    radians_t angle_away_from_centerline = fabs(gamma - agent_pos.a);
+    radians_t angle_away_from_centerline = fabs(normalize(gamma - agent_pos.a));
 
     result.dist_away = hypot(dy, dx); 
     result.in_cone = (result.dist_away < my_sensor_range) && (angle_away_from_centerline < my_sensor_angle / 2.0);

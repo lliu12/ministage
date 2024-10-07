@@ -60,14 +60,17 @@ void AStarAgent::draw() {
         gluDisk(robot_pos, 0, 0.3, 20, 1);
         gluDeleteQuadric(robot_pos);
 
-        // draw wedge for robot FOV
-        glColor4f(0, 0, 1, 0.15); // blue
-        GLUquadric *fov = gluNewQuadric();
-        gluQuadricDrawStyle(fov, GLU_FILL);
-        gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
-                    rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
-                    rtod(-sp->sensing_angle)); // sweep angle
-        gluDeleteQuadric(fov);
+        if (!plan.empty() && plan.back() != SiteID(0,0)) { 
+        // {
+            // draw wedge for robot FOV
+            glColor4f(0, 0, 1, 0.15); // blue
+            GLUquadric *fov = gluNewQuadric();
+            gluQuadricDrawStyle(fov, GLU_FILL);
+            gluPartialDisk(fov, 0, sp->sensing_range, 20, 1,
+                        rtod(M_PI / 2.0 + sp->sensing_angle / 2.0), // start angle
+                        rtod(-sp->sensing_angle)); // sweep angle
+            gluDeleteQuadric(fov);
+        }
         
     glPopMatrix();
 
@@ -111,6 +114,13 @@ void AStarAgent::set_pos(SiteID pos) {
     cur_pos = pos;
 }
 
+void AStarAgent::update_travel_angle() {
+    if (!plan.empty() && plan.back() != SiteID(0,0)) {
+        travel_angle = plan.back().angle();
+        printf("It's time %f. Agent %i's travel angle is now %f. Using angle_at_time fn it should be %f.\n", *(planner->timestep), id, travel_angle, step_at_time(*(planner->timestep)).angle());
+    }
+}
+
 void AStarAgent::update_plan() {
 
     if (!planner->reserved(*(planner->timestep), cur_pos.idx, cur_pos.idy) || planner->reservations[AStarPlanner::Reservation(*(planner->timestep), cur_pos.idx, cur_pos.idy)] != id) {
@@ -120,17 +130,35 @@ void AStarAgent::update_plan() {
     //     printf("Agent %i at time %f, pos %i, %i matches reservation. \n", id, *(planner->timestep), cur_pos.idx, cur_pos.idy);
     // }
 
+    // for (int i; i < plan.size(); i++) {
+    //     float dt = planner->diags_take_longer ? 0.5 : 1.0; 
+    //     float temp_t = *(planner->timestep) + i * dt;
+    //     printf("checking agent %i plan function: step at time %f is %i, %i\n", id, temp_t, step_at_time(temp_t).idx, step_at_time(temp_t).idy);
+
+    // }
+
+    // if (!plan.empty() && plan.back() != SiteID(0,0)) { 
+
+    //     // doesn't work because agent is picking up itself??
+    //     if (planner->sensing_cone_invalid(cur_pos, travel_angle, *(planner->timestep), sp->sensing_range, sp->sensing_angle, true)) {
+    //         printf("\033[31mAgent %i at time %f, pos %i, %i should be invalid. \n\033[0m", id, *(planner->timestep), cur_pos.idx, cur_pos.idy);
+    //         // std::this_thread::sleep_for(std::chrono::seconds(2));
+    //     }
+    // }
+
     if (cur_pos == goal) {
         goal_reached_update();
     }
 
     if (plan.empty()) {
         get_plan();
+
+        if (plan.back() != SiteID(0,0)) {
+            travel_angle = plan.back().angle();
+        }
     }
 
-    if (plan.back() != SiteID(0,0)) {
-        travel_angle = plan.back().angle();
-    }
+
 }
 
 void AStarAgent::update_motion() {
@@ -160,6 +188,18 @@ void AStarAgent::update_motion() {
     // add new position to trail
     if (sp->gui_draw_footprints) {
         update_trail();
+    }
+
+
+    if (!plan.empty() && plan.back() != SiteID(0,0)) { 
+
+        // doesn't work because agent is picking up itself??
+        float dt = planner->diags_take_longer ? 0.5 : 1.0; 
+        float temp_travel_angle = plan.back().angle();
+        if (planner->sensing_cone_invalid(cur_pos, temp_travel_angle, *(planner->timestep) + dt, sp->sensing_range, sp->sensing_angle, true)) {
+            printf("\033[31mAgent %i at time %f, pos %i, %i with angle %f should be invalid. \n\033[0m", id, *(planner->timestep) + dt, cur_pos.idx, cur_pos.idy, temp_travel_angle);
+            // std::this_thread::sleep_for(std::chrono::seconds(2));
+        }
     }
 }
 
@@ -196,12 +236,20 @@ void AStarAgent::get_plan() {
     // printf("\nGetting a new plan for agent %i\n", id);
     plan = planner->search(cur_pos, goal, sp->sensing_range, sp->sensing_angle, id);
 
+    for (int i; i < plan.size(); i++) {
+        float dt = planner->diags_take_longer ? 0.5 : 1.0; 
+        float temp_t = *(planner->timestep) + i * dt;
+        printf("checking agent plan function: step at time %f is %i, %i\n", temp_t, step_at_time(temp_t).idx, step_at_time(temp_t).idy);
+
+    }
+
     // printf("Agent %i's plan: \n", id);
     // for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
     //     printf("step %i, %i\n", (*dp).idx, (*dp).idy);
     // }
 
 }
+
 
 
 void AStarAgent::abort_plan() {
@@ -242,4 +290,10 @@ void AStarAgent::abort_plan() {
     // clear agent's plan
     plan.clear();
 
+}
+
+SiteID AStarAgent::step_at_time(float t) {
+    float dt = planner->diags_take_longer ? 0.5 : 1.0; 
+    int steps_into_future = (t - *(planner->timestep)) / dt;
+    return plan[plan.size() - steps_into_future - 1];
 }

@@ -97,6 +97,11 @@ class AStarPlanner {
     // check if anything occupies the sensing cone in Pose p at time t
     bool sensing_cone_occupied(SiteID sensing_from, radians_t a, float t, meters_t sensing_range = 0, radians_t sensing_angle = 0);
 
+    // check if anything occupies the sensing cone in Pose p at time t
+    // detect if agent senses another occupied site OR is within view of another agent
+    // a indicates the robot's heading; use 1 to run the function and check only if the robot is blocking others
+    bool sensing_cone_invalid(SiteID sensing_from, radians_t a, float t, meters_t sensing_range = 0, radians_t sensing_angle = 0, bool verbose = false);
+
     // void reset();
     void clear_reservations();
     

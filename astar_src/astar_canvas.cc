@@ -92,6 +92,15 @@ void Canvas::draw() {
     //     glEnd();
     // }
 
+
+    // // draw simulation time
+    // char buffer[50];
+    // snprintf(buffer, sizeof(buffer), "Time: %.2f", sim->timestep);
+    // // Draw the text using FLTK's text drawing function
+    // fl_color(FL_BLACK);
+    // fl_draw("hello world", sim->space->cells[0][0]->xmin, sim->space->cells[0][0]->ymin);
+
+
     redraw();
 
 }

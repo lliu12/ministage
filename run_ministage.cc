@@ -14,9 +14,9 @@ int main(int argc, char* argv[])
     // Tests that MiniStage is working as expected
     sim_params sp;
 
-    sp.num_agents = 256;
+    sp.num_agents = 1;
 
-    sp.periodic = true;
+    sp.periodic = false;
     sp.circle_arena = false;
     sp.r_upper = 20;
     sp.r_lower = 0;
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
     
-    sp.anglenoise = 0.5;
+    sp.anglenoise = 1.5;
     sp.anglebias = 0;
     sp.noise_prob = 1;
     sp.conditional_noise = false; 
@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
     // sp.gui_draw_every = 5; // update gui every x updates
     sp.gui_zoom = 20; // zoom in on gui
     sp.gui_draw_cells = true;
-    sp.gui_draw_footprints = false;
+    sp.gui_draw_footprints = true;
     
 
     sp.outfile_name = "";
