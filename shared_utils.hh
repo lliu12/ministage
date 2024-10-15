@@ -20,7 +20,7 @@
 #endif
 
 // Debugging
-void IS_TRUE(bool x);
+// void IS_TRUE(bool x);
 
 // const char* redText = "\033[1;31m";
 // const char* resetText = "\033[0m";
@@ -251,6 +251,24 @@ class SiteID {
     };
 
 };
+
+// Given a global difference between two cells that should be neighbors on the torus, 
+// recover the direction we step in (e.g. -9, 1 a step across the boundary becomes 1,1)
+inline SiteID recover_periodic_step(SiteID a, int cells_per_side) {
+    int x = ((a.idx + cells_per_side) % cells_per_side);
+    x = x > 1 ? x - cells_per_side : x;
+    int y = ((a.idy + cells_per_side) % cells_per_side);
+    y = y > 1 ? y - cells_per_side : y;
+
+    return SiteID(x,y);
+};
+
+// Given an out of bounds position, wrap it in periodic space to be valid
+inline SiteID wrap_periodic(SiteID a, int cells_per_side) {
+    int wrap_idx = (a.idx + cells_per_side) % cells_per_side;
+    int wrap_idy = (a.idy + cells_per_side) % cells_per_side;
+    return SiteID(wrap_idx, wrap_idy);
+}
 
 
 // SpaceUnit class

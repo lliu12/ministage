@@ -13,13 +13,13 @@ int main(int argc, char* argv[])
 {
     sim_params sp;
 
-    sp.num_agents = 5;
-    sp.periodic = false;
+    sp.num_agents = 10;
+    sp.periodic = true;
     sp.diags = true;
     sp.r_upper = 8;
     sp.diags_take_longer = false;
 
-    sp.cells_per_side = 10;
+    sp.cells_per_side = 20;
 
     sp.sensing_angle = M_PI * 2.0 / 3.0;
     sp.sensing_range = 2 * 1.25; // larger value for cps = 10
@@ -88,6 +88,13 @@ int main(int argc, char* argv[])
         IS_TRUE(test_sim.planner->sensing_cone_occupied(SiteID(3,2), 0, 2, sp.sensing_range, sp.sensing_angle)); // should be blocked
         IS_TRUE(test_sim.planner->sensing_cone_occupied(SiteID(3,2), M_PI / 2.0, 3, sp.sensing_range, sp.sensing_angle)); // should be blocked
         IS_TRUE(test_sim.planner->sensing_cone_occupied(SiteID(3,5), normalize(M_PI / 2.0 * 3), 4, sp.sensing_range, sp.sensing_angle)); // should be blocked
+
+        IS_TRUE(recover_periodic_step(SiteID(-9, 1), 10) == SiteID(1, 1));
+        IS_TRUE(recover_periodic_step(SiteID(9, 1), 10) == SiteID(-1, 1));
+        IS_TRUE(recover_periodic_step(SiteID(19, 1), 20) == SiteID(-1, 1));
+        IS_TRUE(recover_periodic_step(SiteID(0, 0), 20) == SiteID(0, 0));
+
+
 
         // // Iterate through the unordered_map using a range-based for loop
         // for (const auto& pair : test_sim.planner->reservations) {

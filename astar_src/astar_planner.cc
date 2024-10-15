@@ -70,7 +70,6 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
     node_details[Reservation(*timestep, start.idx, start.idy)] = Node(start, SiteID(-1, -1), *timestep, 0, 0);
     to_visit.insert(node_details[Reservation(*timestep, start.idx, start.idy)]);
 
-
     // // handle case where start or goal is blocked
     // if (permanent_reservations[start.idx][start.idy] || permanent_reservations[goal.idx][goal.idy]) {
     //     printf("Start or goal location is blocked by an obstacle.\n");
@@ -226,7 +225,7 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
 // cur_t is the time we arrived at SiteID cur
 // nbr is the location we are considering moving to next
 bool AStarPlanner::is_invalid_step(SiteID cur, SiteID nbr, float cur_t, meters_t sensing_range, radians_t sensing_angle) {
-        float travel_time =  diags_take_longer ? dist_heuristic(cur, nbr) : 1.0;
+        float travel_time = diags_take_longer ? dist_heuristic(cur, nbr) : 1.0;
 
         // wrap sensing angle if needed
         SiteID wrapped;
@@ -257,7 +256,14 @@ bool AStarPlanner::is_invalid_step(SiteID cur, SiteID nbr, float cur_t, meters_t
         bool sensing_cone_blocked;
         // now check sensing cone validity
         // if moving to this neighbor would require moving while something was in our sensing cone, this path is blocked. 
-        radians_t my_heading = (wrapped == cur) ?  -1 : (wrapped - cur).angle(); // sensing cone never blocked if this is a wait step and we've already checked that 
+
+        // detail here for periodic planning: should this be wrapped or nbr? 
+        // UPDATE HEADING USING RECOVER PERIODIC STEP
+        SiteID step = nbr - cur;
+        if (space->periodic) {
+            step = recover_periodic_step(step, space->cells_per_side);
+        }
+        radians_t my_heading = (nbr == cur) ?  -1 : step.angle(); // sensing cone never blocked if this is a wait step and we've already checked that 
 
         // check that sensing cone is not blocked the step right before moving
         // case where time increments by 1 per step
@@ -287,6 +293,11 @@ std::vector<SiteID> AStarPlanner::recover_plan(SiteID start, SiteID goal, std::u
 
         make_reservation(time, s.idx, s.idy, agent_id);
         SiteID step = s - (*node_details)[Reservation(time, s.idx, s.idy)].parent;
+
+        if (space->periodic) {
+            step = recover_periodic_step(step, space->cells_per_side);
+        }
+
         // printf("previous step: %i, %i \n", step.idx, step.idy);
 
         if ((*node_details).find(Reservation(time, s.idx, s.idy)) == (*node_details).end()) {
@@ -418,7 +429,7 @@ bool AStarPlanner::sensing_cone_invalid(SiteID sensing_from, radians_t a, float 
                     // if nbr is in our vision cone
                     // when a == -1, it indicates that the agent is waiting for a step, so it's okay for things to move in front of it
                     if (a != -1 && sensing_from != test->id && in_vision_cone(p, test_pose, sensing_range, sensing_angle).in_cone) { 
-                        printf("check if blocked by nbr agent %i at time %f has angle %f from in planner\n", nbr_id, cur.t, test_pose.a);
+                        printf("check if blocked by nbr agent %i at time %f while we face angle %f at pos %i, %i from in planner\n", nbr_id, cur.t, p.a, cur.pos.idx, cur.pos.idy);
                         if(verbose) {
                             printf("invalid because agent is blocked \n");
                         }
@@ -426,27 +437,14 @@ bool AStarPlanner::sensing_cone_invalid(SiteID sensing_from, radians_t a, float 
                         return true; 
                     }
 
-                    
-                    // std::vector<float> time_incs = diags_take_longer ? std::vector<float>{0.5, 1.0} : std::vector<float>{1.0};
-
-                    // if (test->id == SiteID(7,2)) {
-                    // // if (test_pose == space->get_pos_as_pose(SiteID(7,2))) {
-                    //     printf("%i, %i\n", !nbr_agent->plan.empty(), nbr_agent->step_at_time(cur.t) != SiteID(0,0));
-                    //     test_pose.a = nbr_agent->step_at_time(cur.t).angle();
-                    //     printf("%i\n", in_vision_cone(test_pose, p, sensing_range, sensing_angle).in_cone);
-
-                    //     test_pose.Print("Test Pose: ");
-                    //     p.Print("Sensing From Pose: ");
-                    // }
-
                     // or we are going to be in nbr's vision cone while nbr moves forward
                     if (sensing_from != test->id && !nbr_agent->plan.empty() && nbr_agent->step_at_time(cur.t) != SiteID(0,0)) { 
                         test_pose.a = nbr_agent->step_at_time(cur.t).angle();
-                        printf("check if blocking nbr agent %i at time %f has angle %f from in planner\n", nbr_id, cur.t, test_pose.a);
+                        printf("check if blocking nbr agent %i at time %f has angle %f at nbr pos %i, %i from in planner\n", nbr_id, cur.t, test_pose.a, test->id.idx, test->id.idy);
                             if(verbose && in_vision_cone(test_pose, p, sensing_range, sensing_angle).in_cone) {
                                 printf("invalid because this agent blocks agent %i who has angle %f at time %f\n", nbr_id, test_pose.a, cur.t);
                             }
-                            
+
                         if (in_vision_cone(test_pose, p, sensing_range, sensing_angle).in_cone) {
                             return true;
                         }

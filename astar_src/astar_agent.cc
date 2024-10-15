@@ -119,6 +119,16 @@ void AStarAgent::update_travel_angle() {
         travel_angle = plan.back().angle();
         printf("It's time %f. Agent %i's travel angle is now %f. Using angle_at_time fn it should be %f.\n", *(planner->timestep), id, travel_angle, step_at_time(*(planner->timestep)).angle());
     }
+
+
+    if (!plan.empty() && plan.back() != SiteID(0,0)) { 
+        float dt = planner->diags_take_longer ? 0.5 : 1.0; 
+        float temp_travel_angle = plan.back().angle();
+        if (planner->sensing_cone_invalid(cur_pos, temp_travel_angle, *(planner->timestep), sp->sensing_range, sp->sensing_angle, true)) {
+            printf("\033[31mAgent %i at time %f, pos %i, %i with angle %f should be invalid. \n\033[0m", id, *(planner->timestep), cur_pos.idx, cur_pos.idy, temp_travel_angle);
+            // std::this_thread::sleep_for(std::chrono::seconds(2));
+        }
+    }
 }
 
 void AStarAgent::update_plan() {
@@ -175,9 +185,7 @@ void AStarAgent::update_motion() {
 
             // else if space periodic,
             if (sp->periodic) {
-                int wrap_idx = (next_pos.idx + sp->cells_per_side) % sp->cells_per_side;
-                int wrap_idy = (next_pos.idy + sp->cells_per_side) % sp->cells_per_side;
-                set_pos(SiteID(wrap_idx, wrap_idy));
+                set_pos(wrap_periodic(next_pos, sp->cells_per_side));
             }
         }
 
@@ -188,18 +196,6 @@ void AStarAgent::update_motion() {
     // add new position to trail
     if (sp->gui_draw_footprints) {
         update_trail();
-    }
-
-
-    if (!plan.empty() && plan.back() != SiteID(0,0)) { 
-
-        // doesn't work because agent is picking up itself??
-        float dt = planner->diags_take_longer ? 0.5 : 1.0; 
-        float temp_travel_angle = plan.back().angle();
-        if (planner->sensing_cone_invalid(cur_pos, temp_travel_angle, *(planner->timestep) + dt, sp->sensing_range, sp->sensing_angle, true)) {
-            printf("\033[31mAgent %i at time %f, pos %i, %i with angle %f should be invalid. \n\033[0m", id, *(planner->timestep) + dt, cur_pos.idx, cur_pos.idy, temp_travel_angle);
-            // std::this_thread::sleep_for(std::chrono::seconds(2));
-        }
     }
 }
 
@@ -274,7 +270,9 @@ void AStarAgent::abort_plan() {
     // next step (iterate backward through plan)
     for (std::vector<SiteID>::reverse_iterator dp = plan.rbegin(); dp != plan.rend(); ++dp) {
         loc = loc + *(dp);
+        if (sp->periodic) { loc = wrap_periodic(loc, sp->cells_per_side); }
         time += dt;
+
         if (planner->reservations[AStarPlanner::Reservation(time, loc.idx, loc.idy)] != id) {
             printf("\033[31mTrying to erase a reservation (time %f, pos %i, %i) that was never made...\033[0m\n", time, loc.idx, loc.idy);
             printf("Agent %i currently at time %f, pos %i, %i\n", id, *(planner->timestep), cur_pos.idx, cur_pos.idy);

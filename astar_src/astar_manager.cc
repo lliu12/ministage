@@ -41,7 +41,7 @@ void AStarManager::update() {
 
     timestep += sp.diags_take_longer ? 0.5 : 1.0;
 
-    printf("Just updated timestep to %f", timestep);
+    printf("Just updated timestep to %f\n", timestep);
 
     for (AStarAgent *a : agents) { 
         a->update_travel_angle(); // for agents that already have a plan 
