@@ -168,25 +168,57 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
         
         // if (reserved(*timestep + 0.5, start.idx, start.idy) || reserved(*timestep + 1, start.idx, start.idy)) { // if no one is here already, have the robot wait and make whoever's coming next replan
         for (float dt : time_incs) {
-            if (reserved(*timestep + dt, start.idx, start.idy)) {
+            std::unordered_set<int> force_replan = robots_we_block(start, *timestep + dt, sensing_range, sensing_angle); // robots we force to replan
+            if (reserved(*timestep + dt, start.idx, start.idy)) { 
                 int blocker_id = reservations[Reservation(*timestep + dt, start.idx, start.idy)];
-                if (blocker_id != agent_id) {
-                    AStarAgent *blocker = (*agents)[blocker_id];
-                    blocker->abort_plan(); // clear blocker's reservations
-                    if (verbose) {
-                        printf("Reserving a wait step for agent %i...\n", agent_id);
-                    }
-                    make_reservation(*timestep + dt, start.idx, start.idy, agent_id); // make wait reservation for current agent
-                    plan.push_back(SiteID(0, 0));
-                    if (verbose) {
-                        printf("\033[31mCalling a replan for agent %i \n\033[0m", blocker_id);
-                    }
-                    blocker->get_plan(); // get new plan for blocker
+                force_replan.insert(blocker_id); 
+            }
+
+            force_replan.erase(agent_id); // make sure our id is not in the set
+
+            for (int i : force_replan) {
+                printf("in force replan: agent %i\n", i);
+            }
+
+            if (!force_replan.empty()) {
+                for (int i : force_replan) {
+                    AStarAgent *nbr = (*agents)[i];
+                    nbr->abort_plan();
                 }
-                else {
-                    printf("blocker and agent id %i match at time %f, so no wait step was reserved...\n", agent_id, *timestep + dt);
+
+                if (verbose) {
+                    printf("Reserving a wait step for agent %i...\n", agent_id);
+                }
+                make_reservation(*timestep + dt, start.idx, start.idy, agent_id); // make wait reservation for current agent
+                plan.push_back(SiteID(0, 0));
+
+                for (int i : force_replan) {
+                    AStarAgent *nbr = (*agents)[i];
+                    if (verbose) {
+                        printf("\033[31mCalling a replan for agent %i \n\033[0m", i);
+                    }
+                    nbr->get_plan();
                 }
             }
+            // if (reserved(*timestep + dt, start.idx, start.idy)) {
+            //     int blocker_id = reservations[Reservation(*timestep + dt, start.idx, start.idy)];
+            //     if (blocker_id != agent_id) {
+            //         AStarAgent *blocker = (*agents)[blocker_id];
+            //         blocker->abort_plan(); // clear blocker's reservations
+            //         if (verbose) {
+            //             printf("Reserving a wait step for agent %i...\n", agent_id);
+            //         }
+            //         make_reservation(*timestep + dt, start.idx, start.idy, agent_id); // make wait reservation for current agent
+            //         plan.push_back(SiteID(0, 0));
+            //         if (verbose) {
+            //             printf("\033[31mCalling a replan for agent %i \n\033[0m", blocker_id);
+            //         }
+            //         blocker->get_plan(); // get new plan for blocker
+            //     }
+            //     else {
+            //         printf("blocker and agent id %i match at time %f, so no wait step was reserved...\n", agent_id, *timestep + dt);
+            //     }
+            // }
             else {
                 if (verbose) {
                     printf("Reserving a wait step for agent %i...\n", agent_id);
@@ -253,12 +285,9 @@ bool AStarPlanner::is_invalid_step(SiteID cur, SiteID nbr, float cur_t, meters_t
             return true;
         }
 
-        bool sensing_cone_blocked;
+        bool sensing_cone_blocked = false;
         // now check sensing cone validity
         // if moving to this neighbor would require moving while something was in our sensing cone, this path is blocked. 
-
-        // detail here for periodic planning: should this be wrapped or nbr? 
-        // UPDATE HEADING USING RECOVER PERIODIC STEP
         SiteID step = nbr - cur;
         if (space->periodic) {
             step = recover_periodic_step(step, space->cells_per_side);
@@ -270,7 +299,22 @@ bool AStarPlanner::is_invalid_step(SiteID cur, SiteID nbr, float cur_t, meters_t
         if (!diags_take_longer) { sensing_cone_blocked = sensing_cone_invalid(cur, my_heading, cur_t, sensing_range, sensing_angle); }
 
         // handling the case where diagonals take longer and time increments by 0.5 per step
-        else {  sensing_cone_blocked = sensing_cone_invalid(cur, my_heading, cur_t + travel_time - 0.5, sensing_range, sensing_angle);  }
+        else {  
+            // sensing_cone_blocked = (sensing_cone_invalid(cur, my_heading, cur_t + travel_time - 0.5, sensing_range, sensing_angle));  // before
+
+            // after
+            // robot sits in place for 1 or two timesteps, then takes one step forward
+            // we need to check that in all 2 or 3 steps, we are not in someone's vision cone while they move forward
+            // and that in the last step, there is furthermore no one in our vision cone
+
+            bool is_diag = abs(nbr.idx - cur.idx) + abs(nbr.idy - cur.idy) > 1;
+            std::vector<float> time_incs = is_diag ? std::vector<float>{0.0, 0.5, 1.0} : std::vector<float>{0.0, 0.5}; // should these start at 0 or at 0.5?
+            for (float dt : time_incs) {
+                radians_t h = (dt == time_incs.back()) ? my_heading : -1; // only give agent an angle during the timestep where it moves forward
+                if (sensing_cone_invalid(cur, h, cur_t + dt, sensing_range, sensing_angle)) { sensing_cone_blocked = true; }
+            }
+        }
+
 
 
         // if (sensing_cone_blocked) {
@@ -358,7 +402,7 @@ void AStarPlanner::clear_reservations() {
 // detect if agent senses another occupied site
 bool AStarPlanner::sensing_cone_occupied(SiteID sensing_from, radians_t a, float t, meters_t sensing_range, radians_t sensing_angle) {
     Pose p = space->get_pos_as_pose(sensing_from);
-    p.a = a;
+    if (a != -1) { p.a = a; }
 
     Node cur; // node we are currently exploring to see if it is reserved and within vision cone
 
@@ -410,7 +454,7 @@ bool AStarPlanner::sensing_cone_invalid(SiteID sensing_from, radians_t a, float 
 
     // track nodes we have already visited
     std::unordered_set<SiteID, SiteID::hash> visited;
-    verbose = true;
+    // verbose = true;
 
     while (!to_visit.empty()) {
         cur = *to_visit.begin();
@@ -429,18 +473,17 @@ bool AStarPlanner::sensing_cone_invalid(SiteID sensing_from, radians_t a, float 
                     // if nbr is in our vision cone
                     // when a == -1, it indicates that the agent is waiting for a step, so it's okay for things to move in front of it
                     if (a != -1 && sensing_from != test->id && in_vision_cone(p, test_pose, sensing_range, sensing_angle).in_cone) { 
-                        printf("check if blocked by nbr agent %i at time %f while we face angle %f at pos %i, %i from in planner\n", nbr_id, cur.t, p.a, cur.pos.idx, cur.pos.idy);
                         if(verbose) {
+                            // printf("check if blocked by nbr agent %i at time %f while we face angle %f at pos %i, %i from in planner\n", nbr_id, cur.t, p.a, cur.pos.idx, cur.pos.idy);
                             printf("invalid because agent is blocked \n");
                         }
-                        
                         return true; 
                     }
 
                     // or we are going to be in nbr's vision cone while nbr moves forward
                     if (sensing_from != test->id && !nbr_agent->plan.empty() && nbr_agent->step_at_time(cur.t) != SiteID(0,0)) { 
                         test_pose.a = nbr_agent->step_at_time(cur.t).angle();
-                        printf("check if blocking nbr agent %i at time %f has angle %f at nbr pos %i, %i from in planner\n", nbr_id, cur.t, test_pose.a, test->id.idx, test->id.idy);
+                        // printf("check if blocking nbr agent %i at time %f has angle %f at nbr pos %i, %i from in planner\n", nbr_id, cur.t, test_pose.a, test->id.idx, test->id.idy);
                             if(verbose && in_vision_cone(test_pose, p, sensing_range, sensing_angle).in_cone) {
                                 printf("invalid because this agent blocks agent %i who has angle %f at time %f\n", nbr_id, test_pose.a, cur.t);
                             }
@@ -459,4 +502,60 @@ bool AStarPlanner::sensing_cone_invalid(SiteID sensing_from, radians_t a, float 
         }
     }
     return false;
+}
+
+
+
+// detect if agent senses another occupied site or is within view of another agent
+// pass in radians_t = -1 to indicate that there is no sensing direction because the agent is doing a wait step
+std::unordered_set<int> AStarPlanner::robots_we_block(SiteID sensing_from, float t, meters_t sensing_range, radians_t sensing_angle, bool verbose) {
+    std::unordered_set<int> nbrs_we_block;
+    Pose p = space->get_pos_as_pose(sensing_from);
+
+    Node cur; // node we are currently exploring to see if it is reserved and within vision cone
+
+    // nodes to explore, in a set sorted in ascending order of f
+    std::set<Node, decltype(cmp)> to_visit(cmp);
+    to_visit.insert(Node(sensing_from, SiteID(-1, -1), t, 0, 0)); // repurpose f in this function to be distance from starting node
+
+    // track nodes we have already visited
+    std::unordered_set<SiteID, SiteID::hash> visited;
+    verbose = true;
+
+    while (!to_visit.empty()) {
+        cur = *to_visit.begin();
+        to_visit.erase(to_visit.begin());
+        visited.insert(cur.pos);
+
+        for (SpaceUnit *test: space->cells[cur.pos.idx][cur.pos.idy]->neighbors) {
+            Pose test_pose = space->get_pos_as_pose(test->id);
+            if (space->periodic) { test_pose = nearest_periodic(p, test_pose, space->space_r); }
+
+            if (p.Distance(test_pose) < sensing_range) {
+                if (reserved(cur.t, test->id.idx, test->id.idy)) { // find all neighbors within sensing_range of agent
+                    int nbr_id = reservations[Reservation(cur.t, test->id.idx, test->id.idy)];
+                    AStarAgent *nbr_agent = (*agents)[nbr_id];
+
+                    // store ids of neighbors we are blocking
+                    if (sensing_from != test->id && !nbr_agent->plan.empty() && nbr_agent->step_at_time(cur.t) != SiteID(0,0)) { 
+                        test_pose.a = nbr_agent->step_at_time(cur.t).angle();
+                            if(verbose && in_vision_cone(test_pose, p, sensing_range, sensing_angle).in_cone) {
+                                printf("check if blocking nbr agent %i at time %f has angle %f at nbr pos %i, %i from in planner\n", nbr_id, cur.t, test_pose.a, test->id.idx, test->id.idy);
+                                printf("invalid because this agent blocks agent %i who has angle %f at time %f\n", nbr_id, test_pose.a, cur.t);
+                            }
+
+                        if (in_vision_cone(test_pose, p, sensing_range, sensing_angle).in_cone) {
+                            nbrs_we_block.insert(nbr_id);
+                        }
+                    }
+                }
+
+                if (visited.find(test->id) == visited.end()) {
+                    meters_t dist = p.Distance(test_pose);
+                    to_visit.insert(Node(test->id, SiteID(-1, -1), cur.t, dist, dist));
+                }
+            }
+        }
+    }
+    return nbrs_we_block;
 }

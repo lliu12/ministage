@@ -117,7 +117,10 @@ void AStarAgent::set_pos(SiteID pos) {
 void AStarAgent::update_travel_angle() {
     if (!plan.empty() && plan.back() != SiteID(0,0)) {
         travel_angle = plan.back().angle();
-        printf("It's time %f. Agent %i's travel angle is now %f. Using angle_at_time fn it should be %f.\n", *(planner->timestep), id, travel_angle, step_at_time(*(planner->timestep)).angle());
+
+        if (sp->verbose) {
+            printf("It's time %f. Agent %i's travel angle is now %f. Using angle_at_time fn it should be %f.\n", *(planner->timestep), id, travel_angle, step_at_time(*(planner->timestep)).angle());
+        }
     }
 
 
@@ -235,8 +238,10 @@ void AStarAgent::get_plan() {
     for (int i; i < plan.size(); i++) {
         float dt = planner->diags_take_longer ? 0.5 : 1.0; 
         float temp_t = *(planner->timestep) + i * dt;
-        printf("checking agent plan function: step at time %f is %i, %i\n", temp_t, step_at_time(temp_t).idx, step_at_time(temp_t).idy);
 
+        if (sp->verbose) {
+            printf("checking agent plan function: step at time %f is %i, %i\n", temp_t, step_at_time(temp_t).idx, step_at_time(temp_t).idy);
+        }
     }
 
     // printf("Agent %i's plan: \n", id);

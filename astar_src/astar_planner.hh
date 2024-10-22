@@ -102,6 +102,9 @@ class AStarPlanner {
     // a indicates the robot's heading; use 1 to run the function and check only if the robot is blocking others
     bool sensing_cone_invalid(SiteID sensing_from, radians_t a, float t, meters_t sensing_range = 0, radians_t sensing_angle = 0, bool verbose = false);
 
+    // return id's of neighbors we are blocking
+    std::unordered_set<int> robots_we_block(SiteID sensing_from, float t, meters_t sensing_range, radians_t sensing_angle, bool verbose = false);
+
     // void reset();
     void clear_reservations();
     

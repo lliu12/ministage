@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     sp.periodic = true;
     sp.diags = true;
     sp.r_upper = 8;
-    sp.diags_take_longer = false;
+    sp.diags_take_longer = true;
 
     sp.cells_per_side = 20;
 
@@ -68,6 +68,7 @@ int main(int argc, char* argv[])
         sp.r_upper = 8;
         sp.cells_per_side = 10;
         sp.periodic = false;
+        sp.diags_take_longer = false;
 
         AStarManager test_sim = AStarManager(sp);
         
@@ -91,6 +92,7 @@ int main(int argc, char* argv[])
 
         IS_TRUE(recover_periodic_step(SiteID(-9, 1), 10) == SiteID(1, 1));
         IS_TRUE(recover_periodic_step(SiteID(9, 1), 10) == SiteID(-1, 1));
+        IS_TRUE(recover_periodic_step(SiteID(9, 9), 10) == SiteID(-1, -1));
         IS_TRUE(recover_periodic_step(SiteID(19, 1), 20) == SiteID(-1, 1));
         IS_TRUE(recover_periodic_step(SiteID(0, 0), 20) == SiteID(0, 0));
 
