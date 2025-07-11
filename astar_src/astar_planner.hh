@@ -18,6 +18,11 @@ class AStarPlanner {
     // Store pointers to agents so we can call replans
     std::vector <AStarAgent *> *agents;
 
+    // Keep statistics on how often functions are called during planning
+    long long replan_count; // how many times a replan is called
+    long long is_invalid_step_call_count; // how many times is_invalid_step is called
+    long long search_call_count; // how many times search is called
+
     // datatype storing a reservation
     struct Reservation {
         float t;
@@ -105,7 +110,8 @@ class AStarPlanner {
     // return id's of neighbors we are blocking
     std::unordered_set<int> robots_we_block(SiteID sensing_from, float t, meters_t sensing_range, radians_t sensing_angle, bool verbose = false);
 
-    // void reset();
+    void reset();
+
     void clear_reservations();
     
     // recover plan from the data generated during a search

@@ -50,6 +50,7 @@ auto cmp = [](AStarPlanner::Node a, AStarPlanner::Node b) {
 // uses a* search to return a set of movements to go from start to goal
 // accounts for spacetime reservations made by other agents, and for agent sensing cone
 std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sensing_range, radians_t sensing_angle, int agent_id) {
+    search_call_count++;
     int search_rounds = 0; 
 
     if (verbose) {
@@ -168,7 +169,7 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
         
         // if (reserved(*timestep + 0.5, start.idx, start.idy) || reserved(*timestep + 1, start.idx, start.idy)) { // if no one is here already, have the robot wait and make whoever's coming next replan
         for (float dt : time_incs) {
-            std::unordered_set<int> force_replan = robots_we_block(start, *timestep + dt, sensing_range, sensing_angle); // robots we force to replan
+            std::unordered_set<int> force_replan = robots_we_block(start, *timestep + dt, sensing_range, sensing_angle, verbose = false); // robots we force to replan
             if (reserved(*timestep + dt, start.idx, start.idy)) { 
                 int blocker_id = reservations[Reservation(*timestep + dt, start.idx, start.idy)];
                 force_replan.insert(blocker_id); 
@@ -176,14 +177,18 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
 
             force_replan.erase(agent_id); // make sure our id is not in the set
 
-            for (int i : force_replan) {
-                printf("in force replan: agent %i\n", i);
+            if (verbose) {
+                for (int i : force_replan) {
+                    printf("in force replan: agent %i\n", i);
+                }
             }
+
 
             if (!force_replan.empty()) {
                 for (int i : force_replan) {
                     AStarAgent *nbr = (*agents)[i];
                     nbr->abort_plan();
+                    replan_count ++;
                 }
 
                 if (verbose) {
@@ -197,7 +202,7 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
                     if (verbose) {
                         printf("\033[31mCalling a replan for agent %i \n\033[0m", i);
                     }
-                    nbr->get_plan();
+                    nbr->get_plan(); // need to store replan depth here
                 }
             }
             // if (reserved(*timestep + dt, start.idx, start.idy)) {
@@ -257,71 +262,72 @@ std::vector<SiteID> AStarPlanner::search(SiteID start, SiteID goal, meters_t sen
 // cur_t is the time we arrived at SiteID cur
 // nbr is the location we are considering moving to next
 bool AStarPlanner::is_invalid_step(SiteID cur, SiteID nbr, float cur_t, meters_t sensing_range, radians_t sensing_angle) {
-        float travel_time = diags_take_longer ? dist_heuristic(cur, nbr) : 1.0;
+    is_invalid_step_call_count++;
+    float travel_time = diags_take_longer ? dist_heuristic(cur, nbr) : 1.0;
 
-        // wrap sensing angle if needed
-        SiteID wrapped;
-        if (space->periodic) {
-            Pose pose_wrapped = nearest_periodic(Pose(cur.idx, cur.idy, 0, 0), Pose(nbr.idx, nbr.idy, 0, 0), space->cells_per_side / 2.0);
-            wrapped = SiteID(pose_wrapped.x, pose_wrapped.y);
+    // wrap sensing angle if needed
+    SiteID wrapped;
+    if (space->periodic) {
+        Pose pose_wrapped = nearest_periodic(Pose(cur.idx, cur.idy, 0, 0), Pose(nbr.idx, nbr.idy, 0, 0), space->cells_per_side / 2.0);
+        wrapped = SiteID(pose_wrapped.x, pose_wrapped.y);
+    }
+    else { wrapped = nbr; }
+
+    // first, check that the positions we will occupy are not already reserved
+    bool positions_invalid;
+    positions_invalid = reserved(cur_t + travel_time, nbr.idx, nbr.idy);
+
+    if (!positions_invalid && diags_take_longer) { // extra intermediate positions to check
+        if (abs(nbr.idx - cur.idx) + abs(nbr.idy - cur.idy) > 1) { // check if step is diagonal
+            positions_invalid = reserved(cur_t + 0.5, cur.idx, cur.idy) || reserved(cur_t + 1.0, cur.idx, cur.idy);
         }
-        else { wrapped = nbr; }
-
-        // first, check that the positions we will occupy are not already reserved
-        bool positions_invalid;
-        positions_invalid = reserved(cur_t + travel_time, nbr.idx, nbr.idy);
-
-        if (!positions_invalid && diags_take_longer) { // extra intermediate positions to check
-            if (abs(nbr.idx - cur.idx) + abs(nbr.idy - cur.idy) > 1) { // check if step is diagonal
-                positions_invalid = reserved(cur_t + 0.5, cur.idx, cur.idy) || reserved(cur_t + 1.0, cur.idx, cur.idy);
-            }
-            else {
-                positions_invalid = reserved(cur_t + 0.5, cur.idx, cur.idy);
-            }
+        else {
+            positions_invalid = reserved(cur_t + 0.5, cur.idx, cur.idy);
         }
+    }
 
-        if (positions_invalid) {
-            // printf("nbr %i, %i is invalid due to another agent's reservation\n", nbr.idx, nbr.idy);
-            return true;
+    if (positions_invalid) {
+        // printf("nbr %i, %i is invalid due to another agent's reservation\n", nbr.idx, nbr.idy);
+        return true;
+    }
+
+    bool sensing_cone_blocked = false;
+    // now check sensing cone validity
+    // if moving to this neighbor would require moving while something was in our sensing cone, this path is blocked. 
+    SiteID step = nbr - cur;
+    if (space->periodic) {
+        step = recover_periodic_step(step, space->cells_per_side);
+    }
+    radians_t my_heading = (nbr == cur) ?  -1 : step.angle(); // sensing cone never blocked if this is a wait step and we've already checked that 
+
+    // check that sensing cone is not blocked the step right before moving
+    // case where time increments by 1 per step
+    if (!diags_take_longer) { sensing_cone_blocked = sensing_cone_invalid(cur, my_heading, cur_t, sensing_range, sensing_angle); }
+
+    // handling the case where diagonals take longer and time increments by 0.5 per step
+    else {  
+        // sensing_cone_blocked = (sensing_cone_invalid(cur, my_heading, cur_t + travel_time - 0.5, sensing_range, sensing_angle));  // before
+
+        // after
+        // robot sits in place for 1 or two timesteps, then takes one step forward
+        // we need to check that in all 2 or 3 steps, we are not in someone's vision cone while they move forward
+        // and that in the last step, there is furthermore no one in our vision cone
+
+        bool is_diag = abs(nbr.idx - cur.idx) + abs(nbr.idy - cur.idy) > 1;
+        std::vector<float> time_incs = is_diag ? std::vector<float>{0.0, 0.5, 1.0} : std::vector<float>{0.0, 0.5}; // should these start at 0 or at 0.5?
+        for (float dt : time_incs) {
+            radians_t h = (dt == time_incs.back()) ? my_heading : -1; // only give agent an angle during the timestep where it moves forward
+            if (sensing_cone_invalid(cur, h, cur_t + dt, sensing_range, sensing_angle)) { sensing_cone_blocked = true; }
         }
-
-        bool sensing_cone_blocked = false;
-        // now check sensing cone validity
-        // if moving to this neighbor would require moving while something was in our sensing cone, this path is blocked. 
-        SiteID step = nbr - cur;
-        if (space->periodic) {
-            step = recover_periodic_step(step, space->cells_per_side);
-        }
-        radians_t my_heading = (nbr == cur) ?  -1 : step.angle(); // sensing cone never blocked if this is a wait step and we've already checked that 
-
-        // check that sensing cone is not blocked the step right before moving
-        // case where time increments by 1 per step
-        if (!diags_take_longer) { sensing_cone_blocked = sensing_cone_invalid(cur, my_heading, cur_t, sensing_range, sensing_angle); }
-
-        // handling the case where diagonals take longer and time increments by 0.5 per step
-        else {  
-            // sensing_cone_blocked = (sensing_cone_invalid(cur, my_heading, cur_t + travel_time - 0.5, sensing_range, sensing_angle));  // before
-
-            // after
-            // robot sits in place for 1 or two timesteps, then takes one step forward
-            // we need to check that in all 2 or 3 steps, we are not in someone's vision cone while they move forward
-            // and that in the last step, there is furthermore no one in our vision cone
-
-            bool is_diag = abs(nbr.idx - cur.idx) + abs(nbr.idy - cur.idy) > 1;
-            std::vector<float> time_incs = is_diag ? std::vector<float>{0.0, 0.5, 1.0} : std::vector<float>{0.0, 0.5}; // should these start at 0 or at 0.5?
-            for (float dt : time_incs) {
-                radians_t h = (dt == time_incs.back()) ? my_heading : -1; // only give agent an angle during the timestep where it moves forward
-                if (sensing_cone_invalid(cur, h, cur_t + dt, sensing_range, sensing_angle)) { sensing_cone_blocked = true; }
-            }
-        }
+    }
 
 
 
-        // if (sensing_cone_blocked) {
-        //     printf("nbr %i, %i is invalid because sensing cone would be blocked while traveling there\n", nbr.idx, nbr.idy);
-        // }
+    // if (sensing_cone_blocked) {
+    //     printf("nbr %i, %i is invalid because sensing cone would be blocked while traveling there\n", nbr.idx, nbr.idy);
+    // }
 
-        return sensing_cone_blocked;
+    return sensing_cone_blocked;
  }
 
 
@@ -398,6 +404,14 @@ void AStarPlanner::clear_reservations() {
     }
     reservations.clear();
 }   
+
+// Reset planner for new trial
+void AStarPlanner::reset() {
+    clear_reservations();
+    replan_count = 0; // how many times a replan is called
+    is_invalid_step_call_count = 0; // how many times is_invalid_step is called
+    search_call_count = 0; // how many times search is called
+}
 
 // detect if agent senses another occupied site
 bool AStarPlanner::sensing_cone_occupied(SiteID sensing_from, radians_t a, float t, meters_t sensing_range, radians_t sensing_angle) {
@@ -520,7 +534,7 @@ std::unordered_set<int> AStarPlanner::robots_we_block(SiteID sensing_from, float
 
     // track nodes we have already visited
     std::unordered_set<SiteID, SiteID::hash> visited;
-    verbose = true;
+    // verbose = true;
 
     while (!to_visit.empty()) {
         cur = *to_visit.begin();

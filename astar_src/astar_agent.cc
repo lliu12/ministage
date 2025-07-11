@@ -60,7 +60,8 @@ void AStarAgent::draw() {
         gluDisk(robot_pos, 0, 0.3, 20, 1);
         gluDeleteQuadric(robot_pos);
 
-        if (!plan.empty() && plan.back() != SiteID(0,0)) { 
+        if (!plan.empty()) { 
+        // if (!plan.empty() && plan.back() != SiteID(0,0)) { // use this line instead if you want to see cones only right before robots move
         // {
             // draw wedge for robot FOV
             glColor4f(0, 0, 1, 0.15); // blue
@@ -98,7 +99,7 @@ void AStarAgent::draw() {
             glColor4f(color.r, color.g, color.b, 0.7);
             GLUquadric *goal = gluNewQuadric();
             gluQuadricDrawStyle(goal, GLU_FILL);
-            gluDisk(goal, 0, 0.12, 20, 1);
+            gluDisk(goal, 0, 0.16, 20, 1);
             gluDeleteQuadric(goal);
     glPopMatrix();
 
@@ -127,10 +128,11 @@ void AStarAgent::update_travel_angle() {
     if (!plan.empty() && plan.back() != SiteID(0,0)) { 
         float dt = planner->diags_take_longer ? 0.5 : 1.0; 
         float temp_travel_angle = plan.back().angle();
-        if (planner->sensing_cone_invalid(cur_pos, temp_travel_angle, *(planner->timestep), sp->sensing_range, sp->sensing_angle, true)) {
-            printf("\033[31mAgent %i at time %f, pos %i, %i with angle %f should be invalid. \n\033[0m", id, *(planner->timestep), cur_pos.idx, cur_pos.idy, temp_travel_angle);
-            // std::this_thread::sleep_for(std::chrono::seconds(2));
-        }
+
+        // sanity check
+        // if (planner->sensing_cone_invalid(cur_pos, temp_travel_angle, *(planner->timestep), sp->sensing_range, sp->sensing_angle, true)) {
+        //     printf("\033[31mAgent %i at time %f, pos %i, %i with angle %f should be invalid. \n\033[0m", id, *(planner->timestep), cur_pos.idx, cur_pos.idy, temp_travel_angle);
+        // }
     }
 }
 
@@ -232,6 +234,7 @@ void AStarAgent::reset() {
 }
 
 void AStarAgent::get_plan() {
+// void AStarAgent::get_plan(int replan_depth) {
     // printf("\nGetting a new plan for agent %i\n", id);
     plan = planner->search(cur_pos, goal, sp->sensing_range, sp->sensing_angle, id);
 

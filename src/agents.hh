@@ -92,6 +92,9 @@ class GoalAgent : public Agent {
     //// Get (global) angle robot should move in to head straight to goal
     virtual double angle_to_goal();
 
+    //// Get distance to goal
+    virtual double dist_to_goal();
+
     virtual void draw() override;
 
     // Constructor

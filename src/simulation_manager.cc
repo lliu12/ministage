@@ -85,7 +85,7 @@ void SimulationManager::run_trial(double trial_length, int trial_id) {
     reset();
     while (sd->sim_time < trial_length) {
 
-        if (!sp.outfile_name.empty() && fmod(sd->sim_time, sp.save_data_interval) < 0.0001) {
+        if (!sp.outfile_name.empty() && fmod(sd->sim_time, sp.save_data_interval) < 0.001) {
             save_data(trial_id);
         }
 
@@ -111,7 +111,9 @@ void SimulationManager::save_data(int trial_id) {
                 std::to_string(a->id) + std::string(",")
                 << a->get_pos().x << std::string(",")
                 << a->get_pos().y << std::string(",")
-                << a->get_pos().a << std::string(",") +
+                << a->get_pos().a << std::string(",") 
+                << a->goal_pos.x << std::string(",")
+                << a->goal_pos.y << std::string(",") +
                 std::to_string(a->goal_birth_time) + std::string(",") +
                 std::to_string(a->goals_reached) + std::string(",") +
                 std::to_string(a->stop) + std::string(",") +
@@ -136,7 +138,9 @@ void SimulationManager::save_data(int trial_id) {
                         std::to_string(a->id) + std::string(",")
                         << a->get_pos().x << std::string(",")
                         << a->get_pos().y << std::string(",")
-                        << a->get_pos().a << std::string(",") +
+                        << a->get_pos().a << std::string(",")
+                        << a->goal_pos.x << std::string(",")
+                        << a->goal_pos.y << std::string(",") +
                         std::to_string(a->goal_birth_time) + std::string(",") +
                         std::to_string(a->goals_reached) + std::string(",") +
                         std::to_string(a->stop) + std::string(",") +

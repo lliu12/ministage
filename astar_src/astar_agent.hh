@@ -31,7 +31,7 @@ class AStarAgent {
     // // store upcoming positions
     // std::unordered_map<float, SiteID> positions; 
 
-    void get_plan();
+    void get_plan(); //  void get_plan(int replan_depth = 0);
 
     void abort_plan();
 

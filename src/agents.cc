@@ -20,7 +20,13 @@ Agent::Agent(int agent_id, sim_params *sim_params, SimulationData *sim_data) {
     sd = sim_data;    
     id = agent_id;
     cur_pos = new Pose();
-    color = Color::RandomColor();
+
+    if (sp->gui_random_colors) {
+        color = Color::RandomColor();
+    }
+
+    else { color =  Color(0.5, 0.5, 0.5, 0.8); } // gray
+
     reset();
 }
 Agent::Agent() {
@@ -119,7 +125,7 @@ void Agent::draw() {
     pose_shift(get_pos());
 
         // draw disk at robot position
-        glColor4f(.5, .5, .5, .8); // gray
+        glColor4f(color.r, color.g, color.b, 0.8); 
         GLUquadric *robot_pos = gluNewQuadric();
         gluQuadricDrawStyle(robot_pos, GLU_FILL);
         gluDisk(robot_pos, 0, 0.15, 20, 1);
@@ -149,7 +155,7 @@ void Agent::draw() {
             glPushMatrix();
             pose_shift(p);
                 // draw disk at footprint position
-                glColor4f(.5, .5, .5, .3); // gray
+                glColor4f(color.r, color.g, color.b, 0.3); // gray
                 GLUquadric *robot_pos = gluNewQuadric();
                 gluQuadricDrawStyle(robot_pos, GLU_FILL);
                 gluDisk(robot_pos, 0, 0.15, 20, 1);
@@ -188,6 +194,7 @@ void GoalAgent::reset() {
 void GoalAgent::goal_updates() {
     goal_pos = random_pos();
     goals_reached++;
+    // printf("Goals reached: %i \n", goals_reached);
     goal_birth_time = sd->sim_time;
 }
 
@@ -209,8 +216,11 @@ void GoalAgent::sensing_update() {
 // Update the robot's intended forward and turning speed
 void GoalAgent::decision_update() {
     travel_angle = angle_to_goal();
+    double a_error = normalize(travel_angle - cur_pos->a);
+    double abs_a_error = abs(a_error);
     
-    fwd_speed = stop ? 0 : sp->cruisespeed;
+    // robots do not move forward if they are blocked or still turning
+    fwd_speed = (stop || abs_a_error > M_PI / 20) ? 0 : sp->cruisespeed;
 
     // for instantaneous turning, set robot to travel angle
     if (sp->turnspeed == -1) {
@@ -219,8 +229,11 @@ void GoalAgent::decision_update() {
     }
     // for non-instantaneous turning, set turnspeed
     else {
-        double a_error = normalize(travel_angle - cur_pos->a);
-        turn_speed = sp->turnspeed * a_error;
+        // use full turn speed until we are close to the final angle
+        turn_speed = abs_a_error > M_PI / 10 ? sp->turnspeed * (a_error / abs_a_error) : sp->turnspeed * a_error;
+
+        // std::max(-sp->turnspeed, std::min(turn_speed, sp->turnspeed));
+        // clip so that average speed (until we are close to target is turnspeed)
     }
 }
 
@@ -243,6 +256,24 @@ double GoalAgent::angle_to_goal() {
       return atan2(y_error, x_error);
 }
 
+
+double GoalAgent::dist_to_goal() {
+    Pose goal_pos_helper; // will be true goal pos if world is not periodic
+    if (!sp->periodic) {
+      goal_pos_helper = goal_pos;
+    }
+
+    // if space is periodic, figure out where robot should move to for shortest path to goal
+    else {
+          goal_pos_helper = nearest_periodic(get_pos(), goal_pos, sp->r_upper);
+    }
+    
+    double x_error = goal_pos_helper.x - cur_pos->x;
+    double y_error = goal_pos_helper.y - cur_pos->y;
+
+    return std::sqrt(x_error * x_error + y_error * y_error);
+}
+
 // Draw goals
 void GoalAgent::draw() {
     Agent::draw();
@@ -250,7 +281,13 @@ void GoalAgent::draw() {
     // draw small point at robot goal
     glPushMatrix(); 
         pose_shift(goal_pos);
-            glColor4f(1, 0, .8, .7); // magenta
+            // glColor4f(1, 0, .8, .7); // magenta
+            if(sp->gui_random_colors) {
+                glColor4f(color.r, color.g, color.b, 0.7);
+            }
+            else {
+                glColor4f(0.1, 0.7, 0.2, 0.7); // green
+            }
             GLUquadric *goal = gluNewQuadric();
             gluQuadricDrawStyle(goal, GLU_FILL);
             gluDisk(goal, 0, 0.12, 20, 1);
@@ -284,7 +321,8 @@ void ConstNoiseAgent::goal_updates() {
 
 // Determine angle for robot to steer in (after adding noise)
 double ConstNoiseAgent::get_travel_angle() {
-  return angle_to_goal() + (sp->anglenoise == -1 ? Random::get_unif_double(-M_PI, M_PI) : Random::get_normal_double(sp->anglebias, sp->anglenoise));
+    // float b = 
+    return angle_to_goal() + (sp->anglenoise == -1 ? Random::get_unif_double(-M_PI, M_PI) : Random::get_normal_double(sp->anglebias, sp->anglenoise));
 }
 
 // Update the robot's intended forward and turning speed
@@ -306,7 +344,7 @@ void ConstNoiseAgent::decision_update() {
 
         // also get travel angle
         travel_angle = get_travel_angle();
-
+        
         // for instantaneous turning, set robot to travel angle
         if (sp->turnspeed == -1) {
             Pose cur_pos = get_pos();
@@ -315,14 +353,25 @@ void ConstNoiseAgent::decision_update() {
         }
     }
 
-    fwd_speed = (stop ? 0 : sp->cruisespeed);
+    double a_error = normalize(travel_angle - get_pos().a);
+    double abs_a_error = abs(a_error);
+
+    // fwd_speed = stop ? 0 : sp->cruisespeed;
+    fwd_speed = (stop || abs_a_error > M_PI / 20) ? 0 : sp->cruisespeed;
 
     // for non-instantaneous turning, set turnspeed
     if (sp->turnspeed != -1) {
-        double a_error = normalize(travel_angle - get_pos().a);
-        turn_speed = sp->turnspeed * a_error;
+        // turn_speed = sp->turnspeed * a_error;
+
+        // use full turn speed until we are close to the final angle
+        turn_speed = abs_a_error > M_PI / 10 ? sp->turnspeed * (a_error / abs_a_error) : sp->turnspeed * a_error;
+
     }
-    current_phase_count++;
+
+    // current_phase_count++;
+    if (abs_a_error < M_PI / 20 || current_phase_count == 0) {current_phase_count++;}
+
+    // printf("agent: %i; travel angle: %f, phase step: %i, a_error: %f, fwd speed: %f, turn speed: %f \n", id, travel_angle, current_phase_count, a_error, fwd_speed, turn_speed);
 }
 
 

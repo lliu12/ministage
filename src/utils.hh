@@ -68,7 +68,7 @@ typedef struct {
     float gui_speedup;
     int gui_zoom;
     bool gui_draw_cells, gui_draw_footprints;
-    // bool gui_ind_colors; // todo
+    bool gui_random_colors;
 
     // for saving data
     float save_data_interval; // leave as empty string to not save data

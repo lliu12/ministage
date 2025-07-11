@@ -57,7 +57,7 @@ void AStarManager::update() {
 
 void AStarManager::reset() {
     timestep = 0;
-    planner->clear_reservations();
+    planner->reset();
     for (AStarAgent *a : agents) { 
         a->reset(); 
     }
@@ -84,7 +84,8 @@ void AStarManager::run_trial(double trial_length, int trial_id) {
     reset();
 
     while (timestep < trial_length) {
-        if (!sp.outfile_name.empty() && fmod(timestep, sp.save_data_interval) < 0.0001) {
+        if (!sp.outfile_name.empty() && fmod(timestep, sp.save_data_interval) < 0.001) {
+            timestep = std::round(timestep / 0.5) * 0.5;
             save_data(trial_id);
         }
 

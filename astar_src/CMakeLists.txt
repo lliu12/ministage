@@ -2,10 +2,11 @@
 # file(GLOB LIB_SOURCES "src/*.cc")
 
 set(SOURCES 
-        astar_manager.cc
+    astar_manager.cc
 	astar_canvas.cc
 	astar_agent.cc
 	astar_planner.cc
+    astar_utils.cc
 	../shared_utils.cc)
 
 # find FLTK
