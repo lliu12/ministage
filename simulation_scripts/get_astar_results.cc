@@ -2,23 +2,25 @@
 // Main Text Fig. 4 of "Noise-Enabled Goal Attainment in Crowded Collectives"
 
 #include <chrono>
+#include <filesystem>
 #include "astar_utils.hh"
 #include "astar_manager.hh"
 #include "astar_canvas.hh"
 
 int main(int argc, char* argv[])
 {
-
     sim_params sp;
     double sim_run_length = 8000;
 
     std::vector<bool> periodic_arr{true};
-    std::vector<int> num_agents_arr = {1, 16};
+    std::vector<int> num_agents_arr = {1, 16, 32, 64, 96, 128}; // reset to this version before upload
 
     // initialize output files
-    std::string projectname = "20250429_astar";
-    std::string planner_filename = projectname + "_planner_out.txt"; // save per-trial info about planner function calls
-    sp.outfile_name = projectname + "_agents_out.txt";
+    std::filesystem::path base_dir = SIM_DATA_DIR;
+    std::filesystem::create_directories(base_dir);
+    std::string projectname = (base_dir / "fig4_astar").string();
+    std::string planner_filename = projectname + "_planner_data.txt"; // save per-trial info about planner function calls
+    sp.outfile_name = projectname + "_agents_data.txt";
 
 
     // output file headings
@@ -27,7 +29,7 @@ int main(int argc, char* argv[])
     planner_file_head.close();
 
     std::ofstream agents_file_head(sp.outfile_name, std::ios::out);
-    agents_file_head << "trial, periodic, num_robots, sim_step_time, robot_id, x_pos, y_pos, goal_birth_time, goals_reached, noise_type, addtl_data\n";
+    agents_file_head << "trial,periodic,num_robots,sim_step_time,robot_id,x_pos,y_pos,goal_birth_time,goals_reached,noise_type\n";
     agents_file_head.close();
 
 
@@ -83,7 +85,7 @@ int main(int argc, char* argv[])
                     
                     auto trial_start_time = std::chrono::high_resolution_clock::now();
 
-                    // sim.run_trial(sp.time_steps, i); // we would usually use run_trial or run_trials, but instead we use custom code to help save extra data
+                    // sim.run_trial(sp.time_steps, i); // replace run_trial or run_trials with a code block that helps save extra data on runtime, etc
                     {
                         sim.reset();
 
@@ -130,7 +132,6 @@ int main(int argc, char* argv[])
                 auto this_duration = std::chrono::duration_cast<std::chrono::milliseconds>(this_end_time - this_start_time);
 
                 complete += 1;
-            // printf("Just ran World %i / %i in %lli seconds: periodic %i, robots %i \n", complete, total_worlds, this_duration.count(), p, num);
             printf("\x1B[36mJust ran World %i / %i in %lli milliseconds: periodic %i, robots %i \n\033[0m\t\t", complete, total_worlds, this_duration.count(), p, num);
         }
     }

@@ -13,7 +13,7 @@ const char* resetText = "\033[0m";
 int main(int argc, char* argv[])
 {
     sim_params sp;
-    sp.num_agents = 32;
+    sp.num_agents = 4;
     sp.periodic = true;
     sp.circle_arena = false;
     sp.r_upper = 5;
@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
     if(sp.periodic) { sp.cells_range = sp.r_upper; }
     sp.use_sorted_agents = false;
     sp.use_cell_lists = true;
-    sp.anglenoise = 0;
+    sp.anglenoise = 1.0;
     sp.anglebias = 0;
     sp.noise_prob = 1;
     sp.conditional_noise = false; 
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     sp.dt = .1;
     sp.goal_tolerance = 0.6;
 
-    sp.gui_random_colors = true; // make all robots gray vs. give robots and goals individual matching colors
+    sp.gui_random_colors = false; // make all robots gray vs. give robots and goals individual matching colors
 
     sp.gui_speedup = 3; // speed up gui compared to real time
     // sp.gui_draw_every = 5; // update gui every x updates

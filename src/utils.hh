@@ -27,11 +27,11 @@ class Agent;
 typedef struct {
     int num_agents;
 
-    bool periodic; ///< use periodic boundary conditions
+    bool periodic; /// use periodic boundary conditions
     bool circle_arena; /// if false, arena is square shaped
     meters_t r_upper; /// outer radius for circle, sidelength / 2 for square where goals are generated
     meters_t r_lower; /// inner radius for goals generated on a 2D ring
-    // meters_t periodic_bounds; ///< x and y axis value where periodic bounds are enforced = r_upper
+    // meters_t periodic_bounds; /// x and y axis value where periodic bounds are enforced = r_upper
 
     // neighbor search settings
     meters_t cells_range; // coordinate range covered by cells with side length < sensing range
@@ -39,9 +39,6 @@ typedef struct {
     bool use_sorted_agents, use_cell_lists;
     meters_t cell_width;
 
-
-    // meters_t model_init_mindist; ///< distance to perturb models away from each other when using AdjustModelPositions function
-    // int model_init_iters; ///< maximum iterations when using AdjustModelPositions function
     float dt; // how much to update by during each step
     bool verbose;
 
@@ -57,7 +54,7 @@ typedef struct {
     float anglebias;
     int avg_runsteps;
     bool randomize_runsteps;
-    float turnspeed; 
+    float turnspeed; // radians per second
 
     // for only applying noise sometimes
     float noise_prob; // At each step where we draw a new direction, apply anglenoise with this probability

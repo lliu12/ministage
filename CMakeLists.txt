@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.10)
 # set project name
 project(MiniStage)
 
+# set data directory
+set(SIM_DATA_DIR "${CMAKE_SOURCE_DIR}/simulation_data")
+
 # require c++ 17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -27,27 +30,32 @@ else()
     message(FATAL_ERROR "FLTK not found. Please make sure it is installed.")
 endif()
 
-# add the executable
-add_executable(Run_MiniStage run_ministage.cc shared_utils.cc)
-add_executable(MiniStage_Results get_ministage_results.cc shared_utils.cc)
-add_executable(Run_Astar run_astar.cc shared_utils.cc)
-add_executable(Astar_Results get_astar_results.cc shared_utils.cc)
-
 # add source code library
 add_subdirectory(src)
 add_subdirectory(astar_src)
 
 include_directories(${FLTK_INCLUDE_DIR} src astar_src)
-target_link_libraries(Run_MiniStage PUBLIC src ${FLTK_LIBRARIES})
-target_link_libraries(MiniStage_Results PUBLIC src ${FLTK_LIBRARIES})
-target_link_libraries(Run_Astar PUBLIC astar_src ${FLTK_LIBRARIES})
-target_link_libraries(Astar_Results PUBLIC astar_src ${FLTK_LIBRARIES})
+
+file(GLOB SIMULATION_SCRIPTS
+    "${CMAKE_SOURCE_DIR}/simulation_scripts/*.cc"
+)
 
 
+foreach(SRC_FILE ${SIMULATION_SCRIPTS})
+    # Get the base name without extension
+    get_filename_component(TARGET_NAME ${SRC_FILE} NAME_WE)
 
-# # add the binary tree to the search path for include files
-# target_include_directories(Run_MiniStage PUBLIC
-#     "${PROJECT_BINARY_DIR}"
-#     # "${PROJECT_SOURCE_DIR}/subdirectory_name
-#     )
+    add_executable(${TARGET_NAME} ${SRC_FILE} shared_utils.cc)
+
+    # Link correct library
+    if(TARGET_NAME MATCHES "astar")
+        target_link_libraries(${TARGET_NAME} PUBLIC astar_src ${FLTK_LIBRARIES})
+    else()
+        target_link_libraries(${TARGET_NAME} PUBLIC src ${FLTK_LIBRARIES})
+    endif()
+
+    target_compile_definitions(${TARGET_NAME} PRIVATE
+        SIM_DATA_DIR=\"${SIM_DATA_DIR}\"
+    )
+endforeach()
 

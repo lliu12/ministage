@@ -1,0 +1,42 @@
+# # Font
+font.family        : serif
+font.serif         : Times New Roman
+mathtext.fontset   : custom
+mathtext.rm        : Times New Roman
+mathtext.it        : Times New Roman:italic
+mathtext.bf        : Times New Roman:bold
+
+# # Axes and ticks
+axes.titlesize     : 14
+# axes.labelsize     : 12
+xtick.labelsize    : 10
+ytick.labelsize    : 10
+# xtick.direction    : in
+# ytick.direction    : in
+xtick.major.size   : 4
+ytick.major.size   : 4
+# axes.linewidth     : 1
+
+# # Lines and markers
+# lines.linewidth    : 1.5
+# lines.markersize   : 5
+
+# # Figure/axes size
+# # figure.figsize     : 3.5, 2.5
+figure.dpi         : 180
+savefig.dpi        : 600
+# figure.autolayout  : True
+
+# Grid
+axes.grid          : False
+
+# Legend
+legend.fontsize    : 9
+legend.frameon     : False
+legend.loc         : best
+
+# # Colors
+# # axes.prop_cycle : color '#1b9e77, #d95f02, #7570b3, #e7298a, #66a61e, #e6ab02, #a6761d, #666666'
+
+# # Savefig
+# savefig.bbox       : tight

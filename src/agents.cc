@@ -231,9 +231,6 @@ void GoalAgent::decision_update() {
     else {
         // use full turn speed until we are close to the final angle
         turn_speed = abs_a_error > M_PI / 10 ? sp->turnspeed * (a_error / abs_a_error) : sp->turnspeed * a_error;
-
-        // std::max(-sp->turnspeed, std::min(turn_speed, sp->turnspeed));
-        // clip so that average speed (until we are close to target is turnspeed)
     }
 }
 

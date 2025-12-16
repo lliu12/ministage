@@ -1,7 +1,8 @@
-// Running this script produces the local sensing simulation data used in 
+// Running this script with the current parameters produces the local sensing simulation data used in 
 // Main Text Fig. 2 of "Noise-Enabled Goal Attainment in Crowded Collectives"
 
 #include <chrono>
+#include <filesystem>
 #include "simulation_manager.hh"
 #include "canvas.hh"
 
@@ -31,9 +32,11 @@ int main(int argc, char* argv[])
     sp.anglebias = 0;
 
     // name outfile and save headings
-    sp.outfile_name = "20250321_long_out.txt";
+    std::filesystem::path base_dir = SIM_DATA_DIR;
+    std::filesystem::create_directories(base_dir);
+    sp.outfile_name = (base_dir / "fig2_simulation_data.txt").string();
     std::ofstream agents_file_head(sp.outfile_name, std::ios::out);
-    agents_file_head << "trial, periodic, num_robots, noise, noise_prob, sim_time, robot_id, x_pos, y_pos, angle, goal_x_pos, goal_y_pos, goal_birth_time, goals_reached, stopped, nearby_robot, addtl_data\n";
+    agents_file_head << "trial,periodic,num_robots,noise,noise_prob,sim_time,robot_id,x_pos,y_pos,angle,goal_x_pos,goal_y_pos,goal_birth_time,goals_reached,stopped,nearby_robot,addtl_data\n";
     agents_file_head.close();
 
 
@@ -66,8 +69,6 @@ int main(int argc, char* argv[])
     sp.dt = .1;
 
     sp.goal_tolerance = 0.6; // sp.avg_runsteps * sp.dt * sp.cruisespeed;
-
-    
 
     sp.gui_speedup = 25; // speed up gui compared to real time
     // sp.gui_draw_every = 5; // update gui every x updates

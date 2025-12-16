@@ -4,7 +4,7 @@
 
 This repository supports the paper "Noise-Enabled Goal Attainment in Crowded Collectives" by Lucy Liu, Justin Werfel, Federico Toschi, and L. Mahadevan. It contains data from the physical robot experiments (experiment_data folder) and code for running the simulations.
 
-The MiniStage program simulates a collective of robots. It is inspired by the [Stage](https://github.com/rtv/Stage/tree/master) simulator, but it's more lightweight, and it is customized for fast simulation of very simple robots.
+The MiniStage program simulates a collective of robots. It is inspired by the [Stage](https://github.com/rtv/Stage/tree/master) simulator.
 
 ============================================================
 
@@ -15,8 +15,6 @@ To run MiniStage, you will need
 * cmake
 * FLTK
 * OpenGL
-
-This software has been tested on an M1 Mac using the homebrew package manager and Xcode.
 
 ============================================================
 
@@ -33,9 +31,11 @@ After the packages are installed, build and run MiniStage using cmake. The steps
 * ./run_ministage
 
 The executables are as follows.
-* ./run_ministage: Run simulation of robots with local sensing based controllers with an animated visualization. 
-* ./run_astar: Run our implementation of the [Cooperative A*](https://ojs.aaai.org/index.php/AIIDE/article/view/18726) global planning program with an animated visualization.
-* ./ministage_results: Save data from simulations of robots with local sensing based controllers.
-* ./astar_results: Save data from simulations of robots using the Cooperative A* planner.
+* ./run_ministage: Run simulation of robots with local sensing based controllers with an animated visualization. Starts paused; press 'P' to unpause. 
+* ./run_astar: Run our implementation of the [Cooperative A*](https://ojs.aaai.org/index.php/AIIDE/article/view/18726) global planning program with an animated visualization. Starts paused; press 'P' to unpause. 
+* ./get_ministage_results: Save data from simulations of robots with local sensing based controllers. Generates data used in Figure 2.
+* ./get_astar_results: Save data from simulations of robots using the Cooperative A* planner. Generates data used in Figure 4.
+* ./get_conditional_results: Generates data used in Figure 4.
+* ./get_experimentmatch_results: Generates data used in Figure 3.
 
 ============================================================
