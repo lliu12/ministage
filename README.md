@@ -2,7 +2,7 @@
 
 ![MiniStage Example Animation](ministage_example.gif)
 
-This repository supports the paper "Noise-Enabled Goal Attainment in Crowded Collectives" by Lucy Liu, Justin Werfel, Federico Toschi, and L. Mahadevan. It contains data from the physical robot experiments (experiment_data folder) and code for running the simulations.
+This repository supports the paper "Noise-Enabled Goal Attainment in Crowded Collectives" by Lucy Liu, Justin Werfel, Federico Toschi, and L. Mahadevan. It contains data from the physical robot experiments (experiment_data folder), code for running the simulations (simulation_scripts folder), and notebooks for generating the main text plots (plotting folder).
 
 The MiniStage program simulates a collective of robots. It is inspired by the [Stage](https://github.com/rtv/Stage/tree/master) simulator.
 
